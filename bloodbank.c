@@ -22,16 +22,18 @@
  *  Syllabus concepts used (Modules 1 - 4):
  *    M1: constants, variables, operators, expressions, selection
  *        (if / switch), branching and looping statements, I/O.
- *    M2: arrays (incl. 2-D arrays for the Verhoeff checksum),
- *        function prototypes / definitions / calls, call by value
- *        and by reference, scope of variables, recursion (binary
- *        search).
+ *    M2: arrays (incl. 2-D arrays for the Verhoeff checksum and
+ *        character arrays with our own string functions), function
+ *        prototypes / definitions / calls, call by value and by
+ *        reference, scope of variables, recursion (binary search).
  *    M3: pointers, pointer arithmetic, malloc / calloc / realloc /
- *        free, pointer to functions (qsort comparators), pointers
- *        and arrays.
+ *        free, pointer to functions (own sort with a compare
+ *        function), pointers and arrays.
  *    M4: structures (incl. an array of structures for the screening
  *        questions), union (search key), file operations fopen /
  *        fread / fwrite / fseek / fprintf, binary file read & write.
+ *  Only <stdio.h> and <stdlib.h> are used; no topic outside the
+ *  syllabus. Today's date is entered when the program starts.
  *
  *  Name   : M.V. VAMSI KRISHNA
  *  Reg No : 25BEV7052
@@ -41,9 +43,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <time.h>
 
 #define DATA_FILE      "lifelink.dat"
 #define REPORT_FILE    "donor_report.txt"
@@ -115,12 +114,13 @@ typedef union {
     char place[30];            /* city or district */
 } SearchKey;
 
-/* file layout: count | nextId | stock[8] | Donor records */
-#define HEADER_SIZE ((long)((2 + NUM_GROUPS) * sizeof(int)))
+/* file layout: version | count | nextId | stock[8] | Donor records */
+#define FILE_VERSION 3
+#define HEADER_SIZE ((long)((3 + NUM_GROUPS) * sizeof(int)))
 
-static const char *GROUPS[NUM_GROUPS] = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"};
+const char *GROUPS[NUM_GROUPS] = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"};
 
-static const char *STATES[NUM_STATES] = {
+const char *STATES[NUM_STATES] = {
     "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
     "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
     "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
@@ -131,7 +131,7 @@ static const char *STATES[NUM_STATES] = {
 };
 
 #define NUM_QUESTIONS 7
-static const Question QUESTIONS[NUM_QUESTIONS] = {
+const Question QUESTIONS[NUM_QUESTIONS] = {
     {"Are you currently taking any medication (e.g., antibiotics, blood thinners)?", 'y', 1, "on medication"},
     {"Have you had any infection, fever, cold, cough, weakness, dizziness, or fatigue today?", 'y', 1, "unwell"},
     {"Have you undergone any surgery or major dental procedure recently (last 6-12 months)?", 'y', 1, "recent surgery"},
@@ -142,55 +142,132 @@ static const Question QUESTIONS[NUM_QUESTIONS] = {
 };
 
 /* Verhoeff checksum tables - UIDAI uses this for the last Aadhaar digit */
-static const int VERHOEFF_D[10][10] = {
+const int VERHOEFF_D[10][10] = {
     {0,1,2,3,4,5,6,7,8,9}, {1,2,3,4,0,6,7,8,9,5}, {2,3,4,0,1,7,8,9,5,6}, {3,4,0,1,2,8,9,5,6,7},
     {4,0,1,2,3,9,5,6,7,8}, {5,9,8,7,6,0,4,3,2,1}, {6,5,9,8,7,1,0,4,3,2}, {7,6,5,9,8,2,1,0,4,3},
     {8,7,6,5,9,3,2,1,0,4}, {9,8,7,6,5,4,3,2,1,0}
 };
-static const int VERHOEFF_P[8][10] = {
+const int VERHOEFF_P[8][10] = {
     {0,1,2,3,4,5,6,7,8,9}, {1,5,7,6,2,8,3,0,9,4}, {5,8,0,3,7,9,6,1,4,2}, {8,9,1,6,0,4,3,5,2,7},
     {9,4,5,3,1,2,6,8,7,0}, {4,2,8,6,5,7,3,9,0,1}, {2,7,9,3,8,0,6,4,1,5}, {7,0,4,6,9,1,3,2,5,8}
 };
 
-static int  stock[NUM_GROUPS];  /* units of blood available per group */
-static Date today;
+int  stock[NUM_GROUPS];  /* units of blood available per group */
+Date today;
 
 /* ------------------------------------------------------------------
- *  String helpers
+ *  Own character and string functions (character arrays + pointers)
  * ------------------------------------------------------------------ */
 
-static void trim(char *s)
+int isDigitChar(char c)
 {
-    char *start = s;
-    int n;
+    return c >= '0' && c <= '9';
+}
 
-    while (*start && isspace((unsigned char)*start))
+int isLetter(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+int isSpaceChar(char c)
+{
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+char lowerCase(char c)
+{
+    return (c >= 'A' && c <= 'Z') ? (char)(c - 'A' + 'a') : c;
+}
+
+char upperCase(char c)
+{
+    return (c >= 'a' && c <= 'z') ? (char)(c - 'a' + 'A') : c;
+}
+
+/* length of a string - pointer arithmetic: end pointer minus start pointer */
+int strLength(const char *s)
+{
+    const char *p = s;
+
+    while (*p != '\0')
+        p++;
+    return (int)(p - s);
+}
+
+void strCopy(char *dest, const char *src)
+{
+    while ((*dest++ = *src++) != '\0')
+        ;
+}
+
+void strAppend(char *dest, const char *src)
+{
+    strCopy(dest + strLength(dest), src);
+}
+
+/* 0 when equal, otherwise the difference of the first characters that differ */
+int strCompare(const char *a, const char *b)
+{
+    while (*a != '\0' && *a == *b) {
+        a++;
+        b++;
+    }
+    return (unsigned char)*a - (unsigned char)*b;
+}
+
+/* pointer to the first (or last) c in s, or NULL when it is not there */
+const char *strFind(const char *s, char c)
+{
+    for (; *s != '\0'; s++)
+        if (*s == c)
+            return s;
+    return NULL;
+}
+
+const char *strFindLast(const char *s, char c)
+{
+    const char *last = NULL;
+
+    for (; *s != '\0'; s++)
+        if (*s == c)
+            last = s;
+    return last;
+}
+
+/* removes spaces at both ends of s */
+void trim(char *s)
+{
+    int start = 0, i, n;
+
+    while (s[start] != '\0' && isSpaceChar(s[start]))
         start++;
-    memmove(s, start, strlen(start) + 1);
+    for (i = 0; s[start + i] != '\0'; i++)      /* shift the text left */
+        s[i] = s[start + i];
+    s[i] = '\0';
 
-    n = (int)strlen(s);
-    while (n > 0 && isspace((unsigned char)s[n - 1]))
+    n = strLength(s);
+    while (n > 0 && isSpaceChar(s[n - 1]))
         s[--n] = '\0';
 }
 
-/* case-insensitive compare (portable replacement for strcasecmp) */
-static int compareIgnoreCase(const char *a, const char *b)
+/* case-insensitive compare */
+int compareIgnoreCase(const char *a, const char *b)
 {
     while (*a && *b) {
-        int diff = tolower((unsigned char)*a) - tolower((unsigned char)*b);
+        int diff = lowerCase(*a) - lowerCase(*b);
         if (diff != 0)
             return diff;
         a++;
         b++;
     }
-    return tolower((unsigned char)*a) - tolower((unsigned char)*b);
+    return lowerCase(*a) - lowerCase(*b);
 }
 
 /* ------------------------------------------------------------------
  *  Safe input functions (fgets based, never leave junk in stdin)
  * ------------------------------------------------------------------ */
 
-static void readLine(const char *prompt, char *buf, int size)
+void readLine(const char *prompt, char *buf, int size)
 {
     printf("%s", prompt);
     fflush(stdout);
@@ -199,7 +276,7 @@ static void readLine(const char *prompt, char *buf, int size)
         printf("\nInput ended. Exiting.\n");
         exit(0);
     }
-    if (strchr(buf, '\n') == NULL) {        /* line too long: discard the rest */
+    if (strFind(buf, '\n') == NULL) {        /* line too long: discard the rest */
         int c;
         while ((c = getchar()) != '\n' && c != EOF)
             ;
@@ -207,22 +284,21 @@ static void readLine(const char *prompt, char *buf, int size)
     trim(buf);
 }
 
-static int readInt(const char *prompt, int min, int max)
+int readInt(const char *prompt, int min, int max)
 {
-    char buf[32];
-    char *end;
-    long value;
+    char buf[32], extra;
+    int value;
 
     for (;;) {
         readLine(prompt, buf, sizeof buf);
-        value = strtol(buf, &end, 10);
-        if (end != buf && *end == '\0' && value >= min && value <= max)
-            return (int)value;
+        /* exactly one number and nothing after it */
+        if (sscanf(buf, "%d%c", &value, &extra) == 1 && value >= min && value <= max)
+            return value;
         printf("  ! Please enter a number between %d and %d.\n", min, max);
     }
 }
 
-static int readYesNo(const char *prompt)
+int readYesNo(const char *prompt)
 {
     char buf[8];
 
@@ -237,7 +313,7 @@ static int readYesNo(const char *prompt)
 }
 
 /* letters, spaces and dots only (names, city, district) */
-static void readWords(const char *prompt, char *buf, int size)
+void readWords(const char *prompt, char *buf, int size)
 {
     for (;;) {
         int ok = 1, i;
@@ -246,7 +322,7 @@ static void readWords(const char *prompt, char *buf, int size)
         if (buf[0] == '\0')
             ok = 0;
         for (i = 0; buf[i] && ok; i++)
-            if (!isalpha((unsigned char)buf[i]) && buf[i] != ' ' && buf[i] != '.')
+            if (!isLetter(buf[i]) && buf[i] != ' ' && buf[i] != '.')
                 ok = 0;
         if (ok)
             return;
@@ -254,7 +330,7 @@ static void readWords(const char *prompt, char *buf, int size)
     }
 }
 
-static void readPhone(const char *prompt, char *buf)
+void readPhone(const char *prompt, char *buf)
 {
     char tmp[32];
 
@@ -262,12 +338,12 @@ static void readPhone(const char *prompt, char *buf)
         int ok, i;
 
         readLine(prompt, tmp, sizeof tmp);
-        ok = strlen(tmp) == 10 && tmp[0] >= '6' && tmp[0] <= '9';
+        ok = strLength(tmp) == 10 && tmp[0] >= '6' && tmp[0] <= '9';
         for (i = 0; tmp[i] && ok; i++)
-            if (!isdigit((unsigned char)tmp[i]))
+            if (!isDigitChar(tmp[i]))
                 ok = 0;
         if (ok) {
-            strcpy(buf, tmp);
+            strCopy(buf, tmp);
             return;
         }
         printf("  ! Enter a valid 10-digit mobile number (starts with 6-9).\n");
@@ -275,34 +351,34 @@ static void readPhone(const char *prompt, char *buf)
 }
 
 /* optional: empty is allowed, otherwise name@domain.tld */
-static void readEmail(const char *prompt, char *buf, int size)
+void readEmail(const char *prompt, char *buf, int size)
 {
     for (;;) {
-        char *at, *dot;
+        const char *at, *dot;
 
         readLine(prompt, buf, size);
         if (buf[0] == '\0')
             return;
-        at = strchr(buf, '@');
-        dot = at ? strrchr(at, '.') : NULL;
-        if (at && at != buf && strchr(at + 1, '@') == NULL && strchr(buf, ' ') == NULL &&
-            dot && dot > at + 1 && strlen(dot) >= 3)
+        at = strFind(buf, '@');
+        dot = at ? strFindLast(at, '.') : NULL;
+        if (at && at != buf && strFind(at + 1, '@') == NULL && strFind(buf, ' ') == NULL &&
+            dot && dot > at + 1 && strLength(dot) >= 3)
             return;
         printf("  ! Enter a valid email address, or press Enter to skip.\n");
     }
 }
 
-static void readAddress(const char *prompt, char *buf, int size)
+void readAddress(const char *prompt, char *buf, int size)
 {
     for (;;) {
         readLine(prompt, buf, size);
-        if (strlen(buf) >= 5)
+        if (strLength(buf) >= 5)
             return;
         printf("  ! Enter the house number and street.\n");
     }
 }
 
-static void readPin(const char *prompt, char *buf)
+void readPin(const char *prompt, char *buf)
 {
     char tmp[32];
 
@@ -310,12 +386,12 @@ static void readPin(const char *prompt, char *buf)
         int ok, i;
 
         readLine(prompt, tmp, sizeof tmp);
-        ok = strlen(tmp) == 6 && tmp[0] >= '1' && tmp[0] <= '9';
+        ok = strLength(tmp) == 6 && tmp[0] >= '1' && tmp[0] <= '9';
         for (i = 0; tmp[i] && ok; i++)
-            if (!isdigit((unsigned char)tmp[i]))
+            if (!isDigitChar(tmp[i]))
                 ok = 0;
         if (ok) {
-            strcpy(buf, tmp);
+            strCopy(buf, tmp);
             return;
         }
         printf("  ! PIN code must be 6 digits and cannot start with 0.\n");
@@ -323,7 +399,7 @@ static void readPin(const char *prompt, char *buf)
 }
 
 /* the state / UT must match one of the 36 official names (any letter case) */
-static void readState(const char *prompt, char *out)
+void readState(const char *prompt, char *out)
 {
     char buf[64];
 
@@ -333,7 +409,7 @@ static void readState(const char *prompt, char *out)
         readLine(prompt, buf, sizeof buf);
         for (i = 0; i < NUM_STATES; i++) {
             if (compareIgnoreCase(buf, STATES[i]) == 0) {
-                strcpy(out, STATES[i]);
+                strCopy(out, STATES[i]);
                 return;
             }
         }
@@ -341,7 +417,7 @@ static void readState(const char *prompt, char *out)
     }
 }
 
-static char readGender(const char *prompt)
+char readGender(const char *prompt)
 {
     char buf[8];
 
@@ -349,7 +425,7 @@ static char readGender(const char *prompt)
         char g;
 
         readLine(prompt, buf, sizeof buf);
-        g = (char)toupper((unsigned char)buf[0]);
+        g = upperCase(buf[0]);
         if (buf[1] == '\0' && (g == 'M' || g == 'F' || g == 'O'))
             return g;
         printf("  ! Enter M, F or O.\n");
@@ -361,7 +437,7 @@ static char readGender(const char *prompt)
  * ------------------------------------------------------------------ */
 
 /* returns index into GROUPS, or -1 if the text is not a blood group */
-static int groupIndex(const char *g)
+int groupIndex(const char *g)
 {
     int i;
 
@@ -371,7 +447,7 @@ static int groupIndex(const char *g)
     return -1;
 }
 
-static void readBloodGroup(const char *prompt, char *out)
+void readBloodGroup(const char *prompt, char *out)
 {
     char buf[16];
 
@@ -381,7 +457,7 @@ static void readBloodGroup(const char *prompt, char *out)
         readLine(prompt, buf, sizeof buf);
         idx = groupIndex(buf);
         if (idx >= 0) {
-            strcpy(out, GROUPS[idx]);   /* store in standard upper-case form */
+            strCopy(out, GROUPS[idx]);   /* store in standard upper-case form */
             return;
         }
         printf("  ! Valid groups: A+ A- B+ B- AB+ AB- O+ O-\n");
@@ -393,13 +469,13 @@ static void readBloodGroup(const char *prompt, char *out)
  *   - every antigen (A, B) the donor has, the recipient must also have
  *   - an Rh+ donor can only give to an Rh+ recipient
  */
-static int canDonate(const char *donor, const char *recipient)
+int canDonate(const char *donor, const char *recipient)
 {
-    if (strchr(donor, 'A') && !strchr(recipient, 'A'))
+    if (strFind(donor, 'A') && !strFind(recipient, 'A'))
         return 0;
-    if (strchr(donor, 'B') && !strchr(recipient, 'B'))
+    if (strFind(donor, 'B') && !strFind(recipient, 'B'))
         return 0;
-    if (donor[strlen(donor) - 1] == '+' && recipient[strlen(recipient) - 1] == '-')
+    if (donor[strLength(donor) - 1] == '+' && recipient[strLength(recipient) - 1] == '-')
         return 0;
     return 1;
 }
@@ -409,9 +485,9 @@ static int canDonate(const char *donor, const char *recipient)
  * ------------------------------------------------------------------ */
 
 /* Verhoeff checksum: the whole 12-digit number must give 0 */
-static int verhoeffValid(const char *digits)
+int verhoeffValid(const char *digits)
 {
-    int c = 0, i, n = (int)strlen(digits);
+    int c = 0, i, n = (int)strLength(digits);
 
     for (i = 0; i < n; i++)
         c = VERHOEFF_D[c][VERHOEFF_P[i % 8][digits[n - 1 - i] - '0']];
@@ -419,7 +495,7 @@ static int verhoeffValid(const char *digits)
 }
 
 /* djb2 hash of the digits - lets us spot a duplicate without storing the number */
-static unsigned long aadhaarFingerprint(const char *digits)
+unsigned long aadhaarFingerprint(const char *digits)
 {
     unsigned long h = 5381;
 
@@ -429,7 +505,7 @@ static unsigned long aadhaarFingerprint(const char *digits)
 }
 
 /* reads "XXXX XXXX XXXX", checks it and returns the last 4 digits and the fingerprint */
-static void readAadhaar(const char *prompt, const Registry *r, char *last4, unsigned long *hash)
+void readAadhaar(const char *prompt, const Registry *r, char *last4, unsigned long *hash)
 {
     char buf[40], digits[16];
 
@@ -439,7 +515,7 @@ static void readAadhaar(const char *prompt, const Registry *r, char *last4, unsi
 
         readLine(prompt, buf, sizeof buf);
         for (i = 0; buf[i] && ok; i++) {
-            if (isdigit((unsigned char)buf[i]) && n < 12)
+            if (isDigitChar(buf[i]) && n < 12)
                 digits[n++] = buf[i];
             else if (buf[i] != ' ' && buf[i] != '-')
                 ok = 0;
@@ -462,7 +538,7 @@ static void readAadhaar(const char *prompt, const Registry *r, char *last4, unsi
             printf("  ! This Aadhaar is already registered to donor %d.\n", d->id);
             continue;
         }
-        strcpy(last4, digits + 8);
+        strCopy(last4, digits + 8);
         printf("  Aadhaar number is valid.\n");
         return;
     }
@@ -472,18 +548,18 @@ static void readAadhaar(const char *prompt, const Registry *r, char *last4, unsi
  *  Date logic
  * ------------------------------------------------------------------ */
 
-static int isLeap(int y)
+int isLeap(int y)
 {
     return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
 }
 
-static int daysInMonth(int m, int y)
+int daysInMonth(int m, int y)
 {
-    static const int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    const int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     return (m == 2 && isLeap(y)) ? 29 : days[m - 1];
 }
 
-static int isValidDate(Date dt)
+int isValidDate(Date dt)
 {
     return dt.y >= 1900 && dt.y <= 2100 &&
            dt.m >= 1 && dt.m <= 12 &&
@@ -491,7 +567,7 @@ static int isValidDate(Date dt)
 }
 
 /* converts a date to a day number so two dates can be subtracted */
-static long dateToDays(Date dt)
+long dateToDays(Date dt)
 {
     int y = dt.y, m = dt.m;
 
@@ -503,7 +579,7 @@ static long dateToDays(Date dt)
 }
 
 /* age in completed years on a given date */
-static int ageOn(Date dob, Date on)
+int ageOn(Date dob, Date on)
 {
     int age = on.y - dob.y;
 
@@ -512,35 +588,37 @@ static int ageOn(Date dob, Date on)
     return age;
 }
 
-static Date getToday(void)
+/* today's date is entered once when the program starts */
+Date readToday(void)
 {
-    time_t now = time(NULL);
-    struct tm *t = localtime(&now);
+    char buf[32];
     Date dt;
 
-    dt.d = t->tm_mday;
-    dt.m = t->tm_mon + 1;
-    dt.y = t->tm_year + 1900;
-    return dt;
+    for (;;) {
+        readLine("Enter today's date (dd/mm/yyyy): ", buf, sizeof buf);
+        if (sscanf(buf, "%d/%d/%d", &dt.d, &dt.m, &dt.y) == 3 && isValidDate(dt) && dt.y >= 2024)
+            return dt;
+        printf("  ! Invalid date. Use dd/mm/yyyy, e.g. 25/10/2026.\n");
+    }
 }
 
-static void formatDate(Date dt, char *out)
+void formatDate(Date dt, char *out)
 {
     if (dt.y == 0)
-        strcpy(out, "Never");
+        strCopy(out, "Never");
     else
         sprintf(out, "%02d/%02d/%04d", dt.d, dt.m, dt.y);
 }
 
 /* dd/mm/yyyy, not in the future; "0" means never when allowNever is set */
-static Date readDate(const char *prompt, int allowNever)
+Date readDate(const char *prompt, int allowNever)
 {
     char buf[32];
     Date dt;
 
     for (;;) {
         readLine(prompt, buf, sizeof buf);
-        if (allowNever && strcmp(buf, "0") == 0) {
+        if (allowNever && strCompare(buf, "0") == 0) {
             dt.d = dt.m = dt.y = 0;
             return dt;
         }
@@ -558,12 +636,12 @@ static Date readDate(const char *prompt, int allowNever)
  *  Eligibility (NBTC 2017) and health screening (e-RaktKosh)
  * ------------------------------------------------------------------ */
 
-static int gapDays(char gender)
+int gapDays(char gender)
 {
     return gender == 'M' ? GAP_MEN : GAP_WOMEN;
 }
 
-static const char *genderWord(char gender)
+const char *genderWord(char gender)
 {
     return gender == 'M' ? "men" : gender == 'F' ? "women" : "donors who identify as Other";
 }
@@ -573,7 +651,7 @@ static const char *genderWord(char gender)
  * >0 = days the donor still has to wait
  * -1 = not eligible (age or weight); *reason says why
  */
-static int checkEligibility(const Donor *d, const char **reason)
+int checkEligibility(const Donor *d, const char **reason)
 {
     int age = ageOn(d->dob, today);
     long since;
@@ -593,7 +671,7 @@ static int checkEligibility(const Donor *d, const char **reason)
     return (int)(gapDays(d->gender) - since);
 }
 
-static int isEligible(const Donor *d)
+int isEligible(const Donor *d)
 {
     const char *reason;
     return checkEligibility(d, &reason) == 0;
@@ -604,7 +682,7 @@ static int isEligible(const Donor *d)
  * atRegistration is 1). Returns how many answers need a deferral and
  * lists their reasons in 'reasons'.
  */
-static int screening(int atRegistration, char *reasons, int size)
+int screening(int atRegistration, char *reasons, int size)
 {
     int i, deferrals = 0;
     char prompt[160];
@@ -619,10 +697,10 @@ static int screening(int atRegistration, char *reasons, int size)
         sprintf(prompt, "  %s (y/n): ", q->text);
         yes = readYesNo(prompt);
         if ((yes && q->deferIf == 'y') || (!yes && q->deferIf == 'n')) {
-            if (deferrals > 0 && (int)strlen(reasons) + 2 < size)
-                strcat(reasons, ", ");
-            if ((int)(strlen(reasons) + strlen(q->reason)) < size)
-                strcat(reasons, q->reason);
+            if (deferrals > 0 && (int)strLength(reasons) + 2 < size)
+                strAppend(reasons, ", ");
+            if ((int)(strLength(reasons) + strLength(q->reason)) < size)
+                strAppend(reasons, q->reason);
             deferrals++;
         }
     }
@@ -633,7 +711,7 @@ static int screening(int atRegistration, char *reasons, int size)
  *  Registry (dynamic array) operations
  * ------------------------------------------------------------------ */
 
-static void ensureCapacity(Registry *r)
+void ensureCapacity(Registry *r)
 {
     Donor *bigger;
     int newCapacity;
@@ -654,7 +732,7 @@ static void ensureCapacity(Registry *r)
 }
 
 /* recursive binary search - works because the list stays sorted by id */
-static int findById(const Donor *list, int low, int high, int id)
+int findById(const Donor *list, int low, int high, int id)
 {
     int mid;
 
@@ -668,7 +746,7 @@ static int findById(const Donor *list, int low, int high, int id)
     return findById(list, low, mid - 1, id);
 }
 
-static int askForDonor(const Registry *r)
+int askForDonor(const Registry *r)
 {
     int id = readInt("Enter donor ID: ", 1, 999999);
     int idx = findById(r->list, 0, r->count - 1, id);
@@ -683,18 +761,21 @@ static int askForDonor(const Registry *r)
  *  Layout: count | nextId | stock[8] | Donor records
  * ------------------------------------------------------------------ */
 
-static int saveData(const Registry *r)
+int saveData(const Registry *r)
 {
     FILE *fp = fopen(DATA_FILE, "wb");
+    int version;
 
     if (fp == NULL) {
         printf("  ! Could not save data to %s\n", DATA_FILE);
         return 0;
     }
+    version = FILE_VERSION;
+    fwrite(&version, sizeof(int), 1, fp);
     fwrite(&r->count, sizeof(int), 1, fp);
     fwrite(&r->nextId, sizeof(int), 1, fp);
     fwrite(stock, sizeof(int), NUM_GROUPS, fp);
-    fwrite(r->list, sizeof(Donor), (size_t)r->count, fp);
+    fwrite(r->list, sizeof(Donor), r->count, fp);
     fclose(fp);
     return 1;
 }
@@ -704,13 +785,13 @@ static int saveData(const Registry *r)
  * donor record change, so fseek jumps straight to them in the file
  * instead of rewriting the whole file.
  */
-static int saveRecord(const Registry *r, int idx)
+int saveRecord(const Registry *r, int idx)
 {
     FILE *fp = fopen(DATA_FILE, "r+b");
 
     if (fp == NULL)
         return saveData(r);
-    fseek(fp, (long)(2 * sizeof(int)), SEEK_SET);                  /* stock */
+    fseek(fp, (long)(3 * sizeof(int)), SEEK_SET);                  /* stock */
     fwrite(stock, sizeof(int), NUM_GROUPS, fp);
     fseek(fp, HEADER_SIZE + (long)idx * (long)sizeof(Donor), SEEK_SET);   /* record idx */
     fwrite(&r->list[idx], sizeof(Donor), 1, fp);
@@ -718,33 +799,28 @@ static int saveRecord(const Registry *r, int idx)
     return 1;
 }
 
-static int loadData(Registry *r)
+int loadData(Registry *r)
 {
     FILE *fp = fopen(DATA_FILE, "rb");
-    int count, nextId;
-    long fileSize;
+    int version, count, nextId;
 
     if (fp == NULL)
         return 0;
 
-    /* fseek to the end to find the file size, then back to the start */
-    fseek(fp, 0, SEEK_END);
-    fileSize = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    if (fread(&count, sizeof(int), 1, fp) != 1 ||
+    /* the file starts with a version number: a file from an older program is not used */
+    if (fread(&version, sizeof(int), 1, fp) != 1 || version != FILE_VERSION ||
+        fread(&count, sizeof(int), 1, fp) != 1 ||
         fread(&nextId, sizeof(int), 1, fp) != 1 ||
         fread(stock, sizeof(int), NUM_GROUPS, fp) != NUM_GROUPS ||
-        count < 0 ||
-        fileSize != HEADER_SIZE + (long)count * (long)sizeof(Donor)) {
+        count < 0) {
         printf("  ! %s is from an older version or damaged - starting with sample data.\n", DATA_FILE);
         fclose(fp);
         return 0;
     }
 
     r->capacity = count > 8 ? count : 8;
-    r->list = calloc((size_t)r->capacity, sizeof(Donor));   /* zero-filled */
-    if (r->list == NULL || fread(r->list, sizeof(Donor), (size_t)count, fp) != (size_t)count) {
+    r->list = calloc(r->capacity, sizeof(Donor));   /* zero-filled */
+    if (r->list == NULL || (int)fread(r->list, sizeof(Donor), count, fp) != count) {
         free(r->list);
         r->list = NULL;
         r->capacity = 0;
@@ -758,9 +834,9 @@ static int loadData(Registry *r)
 }
 
 /* used on the very first run so the program has data to demonstrate */
-static void loadSampleData(Registry *r)
+void loadSampleData(Registry *r)
 {
-    static const Donor samples[] = {
+    const Donor samples[] = {
         {0, "Ravi Kumar", "K. Srinivas", {14, 3, 2002}, 'M', "O+", 68, "9876543210", "",
          "12-4 Seed Access Road", "Amaravati", "Guntur", "Andhra Pradesh", "522237", "4821", 0, {12, 5, 2026}, 3},
         {0, "Sneha Reddy", "P. Venkat Reddy", {22, 7, 2005}, 'F', "A+", 54, "9123456780", "",
@@ -784,7 +860,7 @@ static void loadSampleData(Registry *r)
         {0, "Ramesh Gupta", "L. Hari Gupta", {9, 1, 1964}, 'M', "O+", 70, "9000012345", "",
          "11 Lakshmipuram", "Guntur", "Guntur", "Andhra Pradesh", "522007", "5518", 0, {0, 0, 0}, 0}
     };
-    static const int sampleStock[NUM_GROUPS] = {12, 3, 15, 2, 7, 1, 20, 4};
+    const int sampleStock[NUM_GROUPS] = {12, 3, 15, 2, 7, 1, 20, 4};
     int i, n = (int)(sizeof samples / sizeof samples[0]);
 
     r->count = 0;
@@ -796,19 +872,20 @@ static void loadSampleData(Registry *r)
         r->list[r->count].aadhaarHash = (unsigned long)(i + 1);   /* sample numbers are not stored */
         r->count++;
     }
-    memcpy(stock, sampleStock, sizeof stock);
+    for (i = 0; i < NUM_GROUPS; i++)
+        stock[i] = sampleStock[i];
 }
 
 /* ------------------------------------------------------------------
  *  Display helpers
  * ------------------------------------------------------------------ */
 
-static void printLine(void)
+void printLine(void)
 {
     printf("------------------------------------------------------------------------------------------------------\n");
 }
 
-static void printHeader(void)
+void printHeader(void)
 {
     printLine();
     printf("%-4s %-18s %-3s %-3s %-4s %-10s  %-11s %-9s %-12s %-8s %s\n",
@@ -816,20 +893,20 @@ static void printHeader(void)
     printLine();
 }
 
-static void statusText(const Donor *d, char *out)
+void statusText(const Donor *d, char *out)
 {
     const char *reason;
     int r = checkEligibility(d, &reason);
 
     if (r == 0)
-        strcpy(out, "Eligible");
+        strCopy(out, "Eligible");
     else if (r > 0)
         sprintf(out, "Wait %dd", r);
     else
         sprintf(out, "Not eligible (%s)", reason);
 }
 
-static void printDonor(const Donor *d)
+void printDonor(const Donor *d)
 {
     char last[16], status[48];
 
@@ -841,7 +918,7 @@ static void printDonor(const Donor *d)
 }
 
 /* full details of one donor, as on a donor card */
-static void printDonorCard(const Donor *d)
+void printDonorCard(const Donor *d)
 {
     char dob[16], last[16], status[48];
 
@@ -863,7 +940,7 @@ static void printDonorCard(const Donor *d)
     printLine();
 }
 
-static void printBar(int n, char symbol)
+void printBar(int n, char symbol)
 {
     int i;
 
@@ -871,7 +948,7 @@ static void printBar(int n, char symbol)
         putchar(symbol);
 }
 
-static int lowStockAlert(void)
+int lowStockAlert(void)
 {
     int i, alerts = 0;
 
@@ -887,43 +964,50 @@ static int lowStockAlert(void)
 }
 
 /* ------------------------------------------------------------------
- *  Sorting comparators (used through function pointers with qsort)
+ *  Sorting (the compare rule is passed as a pointer to a function)
  * ------------------------------------------------------------------ */
 
-static int byName(const void *a, const void *b)
+int byName(const Donor *x, const Donor *y)
 {
-    const Donor *x = *(const Donor *const *)a;
-    const Donor *y = *(const Donor *const *)b;
     return compareIgnoreCase(x->name, y->name);
 }
 
-static int byGroup(const void *a, const void *b)
+int byGroup(const Donor *x, const Donor *y)
 {
-    const Donor *x = *(const Donor *const *)a;
-    const Donor *y = *(const Donor *const *)b;
     int diff = groupIndex(x->group) - groupIndex(y->group);
     return diff ? diff : compareIgnoreCase(x->name, y->name);
 }
 
-static int byCity(const void *a, const void *b)
+int byCity(const Donor *x, const Donor *y)
 {
-    const Donor *x = *(const Donor *const *)a;
-    const Donor *y = *(const Donor *const *)b;
     int diff = compareIgnoreCase(x->city, y->city);
     return diff ? diff : compareIgnoreCase(x->name, y->name);
+}
+
+/* insertion sort of an array of donor pointers, using any compare function */
+void sortDonors(const Donor *view[], int n, int (*compare)(const Donor *, const Donor *))
+{
+    int i, j;
+
+    for (i = 1; i < n; i++) {
+        const Donor *key = view[i];
+
+        for (j = i - 1; j >= 0 && compare(view[j], key) > 0; j--)
+            view[j + 1] = view[j];
+        view[j + 1] = key;
+    }
 }
 
 /* ------------------------------------------------------------------
  *  Menu features
  * ------------------------------------------------------------------ */
 
-static void registerDonor(Registry *r)
+void registerDonor(Registry *r)
 {
-    Donor d;
+    Donor d = {0};          /* every member starts at zero */
     char reasons[160];
     int age;
 
-    memset(&d, 0, sizeof d);
     printf("\n--- Register as a Blood Donor ---\n");
     printf("Rules (NBTC 2017): age 18-65 (first-time donor up to 60), weight 45 kg+,\n");
     printf("90 days between donations for men and 120 days for women.\n");
@@ -997,10 +1081,10 @@ static void registerDonor(Registry *r)
     printDonorCard(&d);
 }
 
-static void listDonors(const Registry *r)
+void listDonors(const Registry *r)
 {
     const Donor **view;
-    int (*compare)(const void *, const void *) = NULL;
+    int (*compare)(const Donor *, const Donor *) = NULL;
     int i, choice;
 
     if (r->count == 0) {
@@ -1017,7 +1101,7 @@ static void listDonors(const Registry *r)
     }
 
     /* sort an array of pointers so the original list keeps its id order */
-    view = calloc((size_t)r->count, sizeof *view);
+    view = calloc(r->count, sizeof *view);
     if (view == NULL) {
         printf("Out of memory!\n");
         return;
@@ -1025,7 +1109,7 @@ static void listDonors(const Registry *r)
     for (i = 0; i < r->count; i++)
         view[i] = r->list + i;          /* same address as &r->list[i] */
     if (compare)
-        qsort(view, (size_t)r->count, sizeof *view, compare);
+        sortDonors(view, r->count, compare);
 
     printf("\n");
     printHeader();
@@ -1036,17 +1120,17 @@ static void listDonors(const Registry *r)
     free(view);
 }
 
-static int matchesKey(const Donor *d, int mode, const SearchKey *key)
+int matchesKey(const Donor *d, int mode, const SearchKey *key)
 {
     switch (mode) {
-    case BY_GROUP:    return strcmp(d->group, key->group) == 0;
+    case BY_GROUP:    return strCompare(d->group, key->group) == 0;
     case BY_CITY:     return compareIgnoreCase(d->city, key->place) == 0;
     case BY_DISTRICT: return compareIgnoreCase(d->district, key->place) == 0;
     default:          return d->id == key->id;
     }
 }
 
-static void searchDonors(const Registry *r)
+void searchDonors(const Registry *r)
 {
     SearchKey key;
     const Donor *d;
@@ -1087,7 +1171,7 @@ static void searchDonors(const Registry *r)
     printf("Found %d donor(s), %d eligible to donate now.\n", found, eligible);
 }
 
-static void emergencyFinder(const Registry *r)
+void emergencyFinder(const Registry *r)
 {
     char patient[4], city[30];
     int i, g, pass, found = 0, units = 0, soonestWait = 0;
@@ -1111,7 +1195,7 @@ static void emergencyFinder(const Registry *r)
     for (pass = 0; pass < 2; pass++) {
         for (i = 0; i < r->count; i++) {
             const Donor *d = &r->list[i];
-            int exact = strcmp(d->group, patient) == 0;
+            int exact = strCompare(d->group, patient) == 0;
             int wait;
 
             if (!canDonate(d->group, patient))
@@ -1146,7 +1230,7 @@ static void emergencyFinder(const Registry *r)
     }
 }
 
-static void recordDonation(Registry *r)
+void recordDonation(Registry *r)
 {
     Donor *d;
     int idx, wait, g;
@@ -1194,7 +1278,7 @@ static void recordDonation(Registry *r)
            d->group, stock[g], gapDays(d->gender));
 }
 
-static void updateDonor(Registry *r)
+void updateDonor(Registry *r)
 {
     Donor *d;
     int idx, choice;
@@ -1225,9 +1309,9 @@ static void updateDonor(Registry *r)
     printf("  Donor %d updated.\n", d->id);
 }
 
-static void deleteDonor(Registry *r)
+void deleteDonor(Registry *r)
 {
-    int idx;
+    int idx, i;
 
     printf("\n--- Remove Donor ---\n");
     idx = askForDonor(r);
@@ -1241,13 +1325,14 @@ static void deleteDonor(Registry *r)
         return;
 
     /* shift the remaining donors left; order by id is preserved */
-    memmove(&r->list[idx], &r->list[idx + 1], (size_t)(r->count - idx - 1) * sizeof(Donor));
+    for (i = idx; i < r->count - 1; i++)
+        r->list[i] = r->list[i + 1];
     r->count--;
     saveData(r);
     printf("  Donor removed.\n");
 }
 
-static void viewStock(void)
+void viewStock(void)
 {
     int g, total = 0;
 
@@ -1264,7 +1349,7 @@ static void viewStock(void)
     lowStockAlert();
 }
 
-static void issueBlood(Registry *r)
+void issueBlood(Registry *r)
 {
     char patient[4], other[4];
     int units, g, alt, anyAlt = 0;
@@ -1315,7 +1400,7 @@ static void issueBlood(Registry *r)
     lowStockAlert();
 }
 
-static void stockMenu(Registry *r)
+void stockMenu(Registry *r)
 {
     printf("\n1. View stock   2. Issue blood   3. Back\n");
     switch (readInt("Choice: ", 1, 3)) {
@@ -1325,7 +1410,7 @@ static void stockMenu(Registry *r)
     }
 }
 
-static void statistics(const Registry *r)
+void statistics(const Registry *r)
 {
     int perGroup[NUM_GROUPS] = {0};
     int i, g, eligible = 0, donations = 0, top = 0;
@@ -1356,7 +1441,7 @@ static void statistics(const Registry *r)
 }
 
 /* writes a readable text report with fprintf, e.g. to print or share */
-static void exportReport(const Registry *r)
+void exportReport(const Registry *r)
 {
     FILE *fp = fopen(REPORT_FILE, "w");
     const Donor *d;
@@ -1398,7 +1483,7 @@ static void exportReport(const Registry *r)
  *  Main
  * ------------------------------------------------------------------ */
 
-static void printMenu(const Registry *r)
+void printMenu(const Registry *r)
 {
     char date[16];
     int g, total = 0;
@@ -1431,7 +1516,8 @@ int main(void)
     Registry reg = {NULL, 0, 0, 1};
     int choice;
 
-    today = getToday();
+    printf("LifeLink - Blood Bank & Donor Finder\n");
+    today = readToday();
     if (!loadData(&reg)) {
         loadSampleData(&reg);
         saveData(&reg);

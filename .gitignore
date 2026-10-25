@@ -9,3 +9,7 @@ donor_report.txt
 .claude/
 screenshots/prototype/
 .DS_Store
+
+# local helper scripts and generated PDFs
+.tools/
+*.pdf
