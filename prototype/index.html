@@ -9,6 +9,7 @@
     --bg: #f6f4f2; --panel: #ffffff; --ink: #1f1b19; --muted: #6d655f; --line: #e6e0da;
     --accent: #c62828; --accent-ink: #ffffff; --accent-soft: #fbe9e9;
     --ok: #2e7d32; --ok-soft: #e7f3e8; --warn: #a15c00; --warn-soft: #fff2dc;
+    --info: #1f5fa8; --info-soft: #e8f0fb;
     --radius: 12px; --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
@@ -17,6 +18,7 @@
       --bg: #151312; --panel: #1f1c1b; --ink: #f2eeea; --muted: #a8a09a; --line: #36312e;
       --accent: #ef5350; --accent-ink: #1a0a0a; --accent-soft: #3b1e1e;
       --ok: #6cc070; --ok-soft: #1c2e1d; --warn: #ffb74d; --warn-soft: #3a2b14;
+      --info: #82b1ff; --info-soft: #1b2638;
       --shadow: none;
     }
   }
@@ -25,11 +27,11 @@
   button, input, select { font: inherit; color: inherit; }
 
   header { background: var(--panel); border-bottom: 1px solid var(--line); }
-  .bar { max-width: 1100px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .bar { max-width: 1200px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
   .brand small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
   .today { margin-left: auto; color: var(--muted); font-size: 13px; text-align: right; }
-  nav { max-width: 1100px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
+  nav { max-width: 1200px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
   nav button {
     border: 0; background: none; padding: 10px 14px; border-bottom: 2px solid transparent;
     color: var(--muted); cursor: pointer; white-space: nowrap;
@@ -37,7 +39,7 @@
   nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
   nav button.emergency { color: var(--accent); }
 
-  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
   h1 { font-size: 22px; margin: 0 0 4px; }
   .lead { color: var(--muted); margin: 0 0 20px; }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
@@ -51,6 +53,9 @@
 
   .alert-box { border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; background: var(--warn-soft); color: var(--warn); }
   .alert-box strong { display: block; margin-bottom: 2px; }
+  .rules { border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; background: var(--info-soft); color: var(--ink); font-size: 14px; }
+  .rules strong { color: var(--info); }
+  .rules ul { margin: 6px 0 0; padding-left: 18px; }
 
   .stock-row { display: grid; grid-template-columns: 44px 1fr 64px; align-items: center; gap: 10px; padding: 5px 0; }
   .stock-row .g { font-weight: 600; }
@@ -62,6 +67,7 @@
 
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 14px; }
   label.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  .hint { font-size: 12px; color: var(--muted); }
   input, select {
     background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0;
   }
@@ -76,18 +82,23 @@
 
   .table-wrap { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
   th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
   td.num { font-variant-numeric: tabular-nums; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .badge.group { background: var(--accent-soft); color: var(--accent); min-width: 40px; text-align: center; }
   .badge.ok { background: var(--ok-soft); color: var(--ok); }
   .badge.wait { background: var(--warn-soft); color: var(--warn); }
+  .badge.bad { background: var(--accent-soft); color: var(--accent); }
+  .why { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .idproof { font-size: 13px; }
+  .idproof .tick { color: var(--ok); font-weight: 700; }
   .actions { display: flex; gap: 6px; }
   .empty { color: var(--muted); padding: 18px 4px; }
 
   form.register { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
   .err { color: var(--accent); font-size: 12px; min-height: 16px; }
+  .okmsg { color: var(--ok); font-size: 12px; min-height: 16px; }
   .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); margin-top: 6px; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
@@ -176,28 +187,50 @@
   <!-- Register -->
   <section data-panel="register" hidden>
     <h1>Register a donor</h1>
-    <p class="lead">Every field is checked with the same rules as the C program.</p>
+    <p class="lead">Identity is checked against a government ID, and eligibility follows the national donor-selection rules.</p>
+    <div class="rules">
+      <strong>Eligibility rules &mdash; NBTC Guidelines for Blood Donor Selection, 2017 (Govt. of India)</strong>
+      <ul>
+        <li>Age 18&ndash;65 years. A first-time donor must not be above 60.</li>
+        <li>Gap between whole-blood donations: at least <b>90 days for men</b> and <b>120 days for women</b>. Donors who identify as Other follow the longer 120-day gap.</li>
+        <li>One valid government ID per donor; the same ID cannot be registered twice.</li>
+      </ul>
+    </div>
     <div class="panel">
       <form class="register" id="reg-form" novalidate>
-        <label class="field">Full name<input name="name" autocomplete="off"><span class="err" data-err="name"></span></label>
-        <label class="field">Age (18&ndash;65)<input name="age" inputmode="numeric"><span class="err" data-err="age"></span></label>
+        <label class="field">Full name (as on ID)<input name="name" autocomplete="off"><span class="err" data-err="name"></span></label>
+        <label class="field">Date of birth<input type="date" name="dob"><span class="okmsg" id="age-out"></span><span class="err" data-err="dob"></span></label>
         <label class="field">Gender
-          <select name="gender"><option value="">Select</option><option>M</option><option>F</option><option>O</option></select>
+          <select name="gender"><option value="">Select</option><option value="M">Male</option><option value="F">Female</option><option value="O">Other</option></select>
           <span class="err" data-err="gender"></span></label>
         <label class="field">Blood group
           <select name="group" id="reg-group"><option value="">Select</option></select>
           <span class="err" data-err="group"></span></label>
         <label class="field">Mobile number<input name="phone" inputmode="numeric" maxlength="10"><span class="err" data-err="phone"></span></label>
         <label class="field">City<input name="city" list="cities" autocomplete="off"><span class="err" data-err="city"></span></label>
+        <label class="field">Government ID type
+          <select name="idType" id="id-type">
+            <option value="">Select</option>
+            <option value="aadhaar">Aadhaar card</option>
+            <option value="voter">Voter ID (EPIC)</option>
+            <option value="pan">PAN card</option>
+            <option value="dl">Driving licence</option>
+            <option value="passport">Passport</option>
+          </select>
+          <span class="err" data-err="idType"></span></label>
+        <label class="field">ID number<input name="idNumber" id="id-number" autocomplete="off" spellcheck="false">
+          <span class="hint" id="id-hint">Choose an ID type first.</span>
+          <span class="okmsg" id="id-ok"></span><span class="err" data-err="idNumber"></span></label>
         <label class="field">Last donation date
           <input type="date" name="last">
           <span class="check"><input type="checkbox" name="never"> Never donated</span>
           <span class="err" data-err="last"></span></label>
         <div style="display:flex;align-items:end;gap:10px">
-          <button class="btn primary" type="submit">Register donor</button>
+          <button class="btn primary" type="submit">Verify &amp; register</button>
           <button class="btn" type="reset">Clear</button>
         </div>
       </form>
+      <p class="note" style="margin:14px 0 0">ID check in this prototype: format rules for every ID type, plus the official Verhoeff checksum for Aadhaar. Only the last 4 characters are stored. Live verification with UIDAI / DigiLocker needs government API access and is listed as a future enhancement.</p>
     </div>
   </section>
 
@@ -236,7 +269,7 @@
   <!-- Report -->
   <section data-panel="report" hidden>
     <h1>Donor report</h1>
-    <p class="lead">The same text report the C program writes to <code>donor_report.txt</code> with <code>fprintf</code>.</p>
+    <p class="lead">A plain-text donor report, like the one the C program writes to <code>donor_report.txt</code> with <code>fprintf</code>.</p>
     <div class="panel">
       <div class="toolbar">
         <button class="btn primary" id="rep-download">Download donor_report.txt</button>
@@ -256,7 +289,6 @@
     <h2 id="edit-title">Edit donor</h2>
     <label class="field">Mobile number<input name="phone" maxlength="10" inputmode="numeric"></label>
     <label class="field">City<input name="city" list="cities"></label>
-    <label class="field">Age (18&ndash;65)<input name="age" inputmode="numeric"></label>
     <span class="err" id="edit-err"></span>
     <div class="dialog-actions">
       <button class="btn" value="cancel" formnovalidate>Cancel</button>
@@ -268,36 +300,104 @@
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ---------- Rules (same as bloodbank.c) ---------- */
+/* ---------- Rules ---------- */
 const GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-const MIN_GAP_DAYS = 90, LOW_STOCK = 5, KEY = "lifelink-prototype-v1";
+const LOW_STOCK = 5, KEY = "lifelink-prototype-v2";
+/* NBTC Guidelines for Blood Donor Selection (2017): whole-blood donation interval */
+const GAP_DAYS = { M: 90, F: 120, O: 120 };
+const MIN_AGE = 18, MAX_AGE = 65, MAX_FIRST_TIME_AGE = 60;
+const GENDER_WORD = { M: "men", F: "women", O: "donors who identify as Other" };
 
+/* name, dob [d,m,y], gender, group, phone, city, last donation [d,m,y] | null, times, ID type, last 4 of ID */
 const SAMPLE_DONORS = [
-  ["Ravi Kumar", 24, "M", "O+", "9876543210", "Amaravati", [12, 5, 2026], 3],
-  ["Sneha Reddy", 21, "F", "A+", "9123456780", "Vijayawada", [1, 9, 2026], 1],
-  ["Arjun Varma", 30, "M", "B+", "9988776655", "Guntur", null, 0],
-  ["Priya Sharma", 27, "F", "O-", "8877665544", "Amaravati", [15, 6, 2026], 2],
-  ["Mohammed Imran", 35, "M", "AB+", "7766554433", "Vijayawada", [20, 3, 2026], 5],
-  ["Divya Lakshmi", 22, "F", "A-", "9012345678", "Guntur", [10, 10, 2026], 1],
-  ["Karthik Naidu", 29, "M", "B-", "8123456789", "Amaravati", [5, 1, 2026], 4],
-  ["Anjali Rao", 26, "F", "AB-", "6301234567", "Vijayawada", null, 0],
-  ["Suresh Babu", 45, "M", "O+", "9440012345", "Guntur", [30, 8, 2026], 6],
-  ["Lakshmi Prasanna", 32, "F", "A+", "9550067890", "Amaravati", [2, 2, 2026], 2]
+  ["Ravi Kumar", [14, 3, 2002], "M", "O+", "9876543210", "Amaravati", [12, 5, 2026], 3, "aadhaar", "4821"],
+  ["Sneha Reddy", [22, 7, 2005], "F", "A+", "9123456780", "Vijayawada", [1, 9, 2026], 1, "voter", "3317"],
+  ["Arjun Varma", [5, 1, 1996], "M", "B+", "9988776655", "Guntur", null, 0, "aadhaar", "7065"],
+  ["Priya Sharma", [30, 9, 1999], "F", "O-", "8877665544", "Amaravati", [15, 6, 2026], 2, "pan", "542F"],
+  ["Mohammed Imran", [11, 11, 1990], "M", "AB+", "7766554433", "Vijayawada", [20, 3, 2026], 5, "dl", "8810"],
+  ["Divya Lakshmi", [17, 2, 2004], "F", "A-", "9012345678", "Guntur", [10, 10, 2026], 1, "aadhaar", "2294"],
+  ["Karthik Naidu", [8, 6, 1997], "M", "B-", "8123456789", "Amaravati", [5, 1, 2026], 4, "passport", "6603"],
+  ["Anjali Rao", [3, 12, 1999], "F", "AB-", "6301234567", "Vijayawada", null, 0, "aadhaar", "1187"],
+  ["Suresh Babu", [19, 4, 1981], "M", "O+", "9440012345", "Guntur", [30, 8, 2026], 6, "voter", "4472"],
+  ["Lakshmi Prasanna", [25, 8, 1994], "F", "A+", "9550067890", "Amaravati", [2, 2, 2026], 2, "aadhaar", "9930"],
+  ["Ramesh Gupta", [9, 1, 1964], "M", "O+", "9000012345", "Guntur", null, 0, "aadhaar", "5518"]
 ];
 const SAMPLE_STOCK = [12, 3, 15, 2, 7, 1, 20, 4];
 
+/* ---------- Government ID checks ---------- */
+const ID_TYPES = {
+  aadhaar:  { name: "Aadhaar",  hint: "12 digits, e.g. 2XXX XXXX XXXX. Checked with the Verhoeff checksum." },
+  voter:    { name: "Voter ID", hint: "3 letters + 7 digits, e.g. ABC1234567." },
+  pan:      { name: "PAN",      hint: "10 characters, e.g. ABCPD1234E (4th letter P = individual)." },
+  dl:       { name: "DL",       hint: "State + RTO + year + number, e.g. AP09 2015 0012345." },
+  passport: { name: "Passport", hint: "1 letter + 7 digits, e.g. K1234567." }
+};
+/* Verhoeff checksum tables (used by UIDAI for the last digit of Aadhaar) */
+const VD = [[0,1,2,3,4,5,6,7,8,9],[1,2,3,4,0,6,7,8,9,5],[2,3,4,0,1,7,8,9,5,6],[3,4,0,1,2,8,9,5,6,7],[4,0,1,2,3,9,5,6,7,8],
+            [5,9,8,7,6,0,4,3,2,1],[6,5,9,8,7,1,0,4,3,2],[7,6,5,9,8,2,1,0,4,3],[8,7,6,5,9,3,2,1,0,4],[9,8,7,6,5,4,3,2,1,0]];
+const VP = [[0,1,2,3,4,5,6,7,8,9],[1,5,7,6,2,8,3,0,9,4],[5,8,0,3,7,9,6,1,4,2],[8,9,1,6,0,4,3,5,2,7],
+            [9,4,5,3,1,2,6,8,7,0],[4,2,8,6,5,7,3,9,0,1],[2,7,9,3,8,0,6,4,1,5],[7,0,4,6,9,1,3,2,5,8]];
+function verhoeffValid(num) {
+  let c = 0;
+  [...num].reverse().forEach((ch, i) => { c = VD[c][VP[i % 8][Number(ch)]]; });
+  return c === 0;
+}
+const normalizeId = s => s.toUpperCase().replace(/[\s-]/g, "");
+/* returns an error message, or "" when the ID is valid */
+function checkGovId(type, raw) {
+  const v = normalizeId(raw);
+  switch (type) {
+    case "aadhaar":
+      if (!/^[2-9]\d{11}$/.test(v)) return "Aadhaar must be 12 digits and cannot start with 0 or 1.";
+      return verhoeffValid(v) ? "" : "Invalid Aadhaar number (checksum failed).";
+    case "voter":    return /^[A-Z]{3}\d{7}$/.test(v) ? "" : "Voter ID must be 3 letters followed by 7 digits.";
+    case "pan":
+      if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(v)) return "PAN must be 5 letters, 4 digits, 1 letter.";
+      return v[3] === "P" ? "" : "This PAN is not an individual's PAN (4th letter must be P).";
+    case "dl":       return /^[A-Z]{2}\d{2}(19|20)\d{2}\d{7}$/.test(v) ? "" : "Driving licence must look like AP09 2015 0012345.";
+    case "passport": return /^[A-Z][1-9]\d{6}$/.test(v) ? "" : "Passport number must be 1 letter followed by 7 digits.";
+    default:         return "Choose an ID type.";
+  }
+}
+async function idFingerprint(type, raw) {
+  const text = `${type}:${normalizeId(raw)}`;
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  } catch (e) {          /* no WebCrypto (e.g. opened as a local file): simple fallback hash */
+    let h = 2166136261;
+    for (const ch of text) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+    return "fnv" + (h >>> 0).toString(16);
+  }
+}
+
+/* ---------- Dates and eligibility ---------- */
 const now = new Date();
 const TODAY = { d: now.getDate(), m: now.getMonth() + 1, y: now.getFullYear() };
-
-/* day number so two dates can be subtracted (same formula as dateToDays in C) */
 function dateToDays({ d, m, y }) {
   if (m < 3) { y--; m += 12; }
   return 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) + Math.floor((153 * (m - 3) + 2) / 5) + d;
 }
-function daysUntilEligible(donor) {
-  if (!donor.last) return 0;
-  const gap = dateToDays(TODAY) - dateToDays(donor.last);
-  return gap >= MIN_GAP_DAYS ? 0 : MIN_GAP_DAYS - gap;
+function ageOn(dob, on) {
+  let a = on.y - dob.y;
+  if (on.m < dob.m || (on.m === dob.m && on.d < dob.d)) a--;
+  return a;
+}
+const ageOf = dob => ageOn(dob, TODAY);
+const fromInput = v => { const [y, m, d] = v.split("-").map(Number); return { d, m, y }; };
+const fmtDate = dt => dt ? `${String(dt.d).padStart(2, "0")}/${String(dt.m).padStart(2, "0")}/${dt.y}` : "Never";
+
+/* { ok, wait, reason } - wait > 0 means eligible again after that many days */
+function eligibility(d) {
+  const age = ageOf(d.dob);
+  if (age < MIN_AGE) return { ok: false, wait: 0, reason: `Under ${MIN_AGE}` };
+  if (age > MAX_AGE) return { ok: false, wait: 0, reason: `Over ${MAX_AGE}` };
+  if (!d.last) {
+    if (age > MAX_FIRST_TIME_AGE) return { ok: false, wait: 0, reason: `First-time donor over ${MAX_FIRST_TIME_AGE}` };
+    return { ok: true, wait: 0, reason: "" };
+  }
+  const gap = GAP_DAYS[d.gender], since = dateToDays(TODAY) - dateToDays(d.last);
+  return since >= gap ? { ok: true, wait: 0, reason: "" } : { ok: false, wait: gap - since, reason: `${gap}-day gap for ${GENDER_WORD[d.gender]}` };
 }
 function canDonate(donor, patient) {
   if (donor.includes("A") && !patient.includes("A")) return false;
@@ -305,19 +405,19 @@ function canDonate(donor, patient) {
   if (donor.endsWith("+") && patient.endsWith("-")) return false;
   return true;
 }
-const fmtDate = dt => dt ? `${String(dt.d).padStart(2, "0")}/${String(dt.m).padStart(2, "0")}/${dt.y}` : "Never";
 const groupIndex = g => GROUPS.indexOf(g);
 const sameText = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /* ---------- Storage (browser only, like lifelink.dat for the C program) ---------- */
 let state;
+const toDate = a => a ? { d: a[0], m: a[1], y: a[2] } : null;
 function sampleState() {
   return {
     nextId: SAMPLE_DONORS.length + 1,
     stock: SAMPLE_STOCK.slice(),
-    donors: SAMPLE_DONORS.map(([name, age, gender, group, phone, city, last, times], i) => ({
-      id: i + 1, name, age, gender, group, phone, city,
-      last: last ? { d: last[0], m: last[1], y: last[2] } : null, times
+    donors: SAMPLE_DONORS.map(([name, dob, gender, group, phone, city, last, times, idType, idLast4], i) => ({
+      id: i + 1, name, dob: toDate(dob), gender, group, phone, city, last: toDate(last), times,
+      idType, idLast4, idHash: `sample-${i + 1}`
     }))
   };
 }
@@ -342,25 +442,28 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
 }
-const statusBadge = d => {
-  const w = daysUntilEligible(d);
-  return w === 0 ? '<span class="badge ok">Eligible</span>' : `<span class="badge wait">Wait ${w}d</span>`;
-};
+function statusBadge(d) {
+  const e = eligibility(d);
+  if (e.ok) return '<span class="badge ok">Eligible</span>';
+  if (e.wait) return `<span class="badge wait" title="${esc(e.reason)}">Wait ${e.wait}d</span>`;
+  return `<span class="badge bad">Not eligible</span><span class="why">${esc(e.reason)}</span>`;
+}
+const idProof = d => `<span class="idproof"><span class="tick" title="Government ID verified">&#10003;</span> ${ID_TYPES[d.idType].name} &bull;&bull;${esc(d.idLast4)}</span>`;
 function donorTable(list, withActions) {
   if (!list.length) return '<p class="empty">No matching donor found.</p>';
   const rows = list.map(d => `<tr>
-      <td class="num">${d.id}</td><td>${esc(d.name)}</td><td class="num">${d.age}</td><td>${d.gender}</td>
+      <td class="num">${d.id}</td><td>${esc(d.name)}</td><td class="num">${ageOf(d.dob)}</td><td>${d.gender}</td>
       <td><span class="badge group">${d.group}</span></td><td class="num">${d.phone}</td><td>${esc(d.city)}</td>
-      <td class="num">${fmtDate(d.last)}</td><td class="num">${d.times}</td><td>${statusBadge(d)}</td>
+      <td class="num">${fmtDate(d.last)}</td><td>${idProof(d)}</td><td>${statusBadge(d)}</td>
       ${withActions ? `<td class="actions">
         <button class="btn small" data-act="donate" data-id="${d.id}" title="Record a donation today">Donate</button>
         <button class="btn small" data-act="edit" data-id="${d.id}">Edit</button>
         <button class="btn small danger" data-act="remove" data-id="${d.id}">Remove</button></td>` : ""}
     </tr>`).join("");
   return `<table><thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Sex</th><th>Group</th><th>Phone</th><th>City</th>
-    <th>Last donated</th><th>Times</th><th>Status</th>${withActions ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
+    <th>Last donated</th><th>ID proof</th><th>Status</th>${withActions ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 function stockBars(target) {
   const max = Math.max(20, ...state.stock);
@@ -378,7 +481,7 @@ function fillSelect(sel, withBlank) {
 
 /* ---------- Views ---------- */
 function renderDashboard() {
-  const eligible = state.donors.filter(d => daysUntilEligible(d) === 0).length;
+  const eligible = state.donors.filter(d => eligibility(d).ok).length;
   const units = state.stock.reduce((a, b) => a + b, 0);
   const low = lowGroups();
   $("#tiles").innerHTML = [
@@ -413,7 +516,7 @@ function renderDonors() {
   if (sort === "group") list.sort((a, b) => groupIndex(a.group) - groupIndex(b.group) || byName(a, b));
   if (sort === "city") list.sort((a, b) => a.city.localeCompare(b.city) || byName(a, b));
   $("#donor-table").innerHTML = donorTable(list, true);
-  const eligible = list.filter(d => daysUntilEligible(d) === 0).length;
+  const eligible = list.filter(d => eligibility(d).ok).length;
   $("#donor-summary").textContent = list.length ? `${list.length} donor(s) shown, ${eligible} eligible to donate now.` : "";
 }
 
@@ -422,10 +525,10 @@ function renderEmergency() {
   const groups = GROUPS.filter(g => canDonate(g, patient));
   const units = groups.reduce((s, g) => s + state.stock[groupIndex(g)], 0);
   const pool = state.donors.filter(d => canDonate(d.group, patient) && (!city || sameText(d.city, city)));
-  const ready = pool.filter(d => daysUntilEligible(d) === 0)
+  const ready = pool.filter(d => eligibility(d).ok)
     .sort((a, b) => (b.group === patient) - (a.group === patient));     /* exact matches first */
-  const waiting = pool.filter(d => daysUntilEligible(d) > 0)
-    .sort((a, b) => daysUntilEligible(a) - daysUntilEligible(b));
+  const waiting = pool.filter(d => eligibility(d).wait > 0)
+    .sort((a, b) => eligibility(a).wait - eligibility(b).wait);
   let html = `<h2>Patient ${patient} can receive from</h2>
     <div class="chips">${groups.map(g => `<span class="chip ${g === patient ? "exact" : ""}">${g}</span>`).join("")}</div>
     <p>Compatible units in the blood bank right now: <strong>${units}</strong></p>`;
@@ -433,8 +536,9 @@ function renderEmergency() {
     html += `<p><strong>${ready.length} eligible donor(s)</strong> ${city ? "in " + esc(city) : ""} &mdash; exact matches are listed first. Call them now.</p>
       <div class="table-wrap">${donorTable(ready, false)}</div>`;
   } else {
+    const w = waiting[0];
     html += `<div class="alert-box"><strong>No eligible compatible donor available right now${city ? " in " + esc(city) : ""}.</strong>
-      ${waiting.length ? `Next available: ${esc(waiting[0].name)} (${waiting[0].group}, ${esc(waiting[0].city)}) in ${daysUntilEligible(waiting[0])} day(s), phone ${waiting[0].phone}.` : "No compatible donor is registered here."}</div>`;
+      ${w ? `Next available: ${esc(w.name)} (${w.group}, ${esc(w.city)}) in ${eligibility(w).wait} day(s), phone ${w.phone}.` : "No compatible donor is registered here."}</div>`;
   }
   $("#em-result").innerHTML = html;
 }
@@ -444,13 +548,15 @@ function renderStock() { stockBars($("#stock-bars")); }
 function reportText() {
   const pad = (s, n) => String(s).slice(0, n).padEnd(n);
   let out = "LifeLink - Blood Bank & Donor Finder\n";
-  out += `Donor report generated on ${fmtDate(TODAY)}\n\n`;
-  out += `${pad("ID", 4)} ${pad("Name", 18)} ${pad("Grp", 4)} ${pad("Phone", 10)}  ${pad("City", 11)} ${pad("Last Donated", 12)} Status\n`;
+  out += `Donor report generated on ${fmtDate(TODAY)}\n`;
+  out += "Eligibility: NBTC 2017 - age 18-65 (first-time donor up to 60), 90 days (men) / 120 days (women) between donations\n\n";
+  out += `${pad("ID", 4)} ${pad("Name", 18)} ${pad("Age", 4)} ${pad("Sex", 4)}${pad("Grp", 4)} ${pad("Phone", 10)}  ${pad("City", 11)} ${pad("Last Donated", 12)} ${pad("ID proof", 15)} Status\n`;
   let eligible = 0;
   for (const d of state.donors) {
-    const w = daysUntilEligible(d);
-    if (w === 0) eligible++;
-    out += `${pad(d.id, 4)} ${pad(d.name, 18)} ${pad(d.group, 4)} ${pad(d.phone, 10)}  ${pad(d.city, 11)} ${pad(fmtDate(d.last), 12)} ${w === 0 ? "Eligible" : `Wait ${w} days`}\n`;
+    const e = eligibility(d);
+    if (e.ok) eligible++;
+    const status = e.ok ? "Eligible" : e.wait ? `Wait ${e.wait} days` : `Not eligible (${e.reason})`;
+    out += `${pad(d.id, 4)} ${pad(d.name, 18)} ${pad(ageOf(d.dob), 4)} ${pad(d.gender, 4)}${pad(d.group, 4)} ${pad(d.phone, 10)}  ${pad(d.city, 11)} ${pad(fmtDate(d.last), 12)} ${pad(`${ID_TYPES[d.idType].name} ..${d.idLast4}`, 15)} ${status}\n`;
   }
   out += "\nBlood stock (units):\n";
   GROUPS.forEach((g, i) => { out += `  ${pad(g, 4)} ${String(state.stock[i]).padStart(3)}${state.stock[i] < LOW_STOCK ? "  LOW" : ""}\n`; });
@@ -477,31 +583,37 @@ function changed() { save(); refreshCities(); RENDER[current](); }
 /* ---------- Actions ---------- */
 function recordDonation(id) {
   const d = state.donors.find(x => x.id === id);
-  const w = daysUntilEligible(d);
-  if (w > 0) { toast(`${d.name} donated recently and must wait ${w} more day(s). Donation not recorded.`); return; }
+  const e = eligibility(d);
+  if (!e.ok) {
+    toast(e.wait
+      ? `${d.name} must wait ${e.wait} more day(s): NBTC requires a ${GAP_DAYS[d.gender]}-day gap for ${GENDER_WORD[d.gender]}. Donation not recorded.`
+      : `${d.name} is not eligible (${e.reason}). Donation not recorded.`);
+    return;
+  }
   if (!confirm(`Record one unit donated today by ${d.name} (${d.group})?`)) return;
   d.last = { ...TODAY };
   d.times++;
   state.stock[groupIndex(d.group)]++;
   changed();
-  toast(`Thank you, ${d.name}! ${d.group} stock is now ${state.stock[groupIndex(d.group)]} unit(s).`);
+  toast(`Thank you, ${d.name}! ${d.group} stock is now ${state.stock[groupIndex(d.group)]} unit(s). Next donation allowed after ${GAP_DAYS[d.gender]} days.`);
 }
 
 let editingId = null;
 function openEdit(id) {
-  const d = state.donors.find(x => x.id === id), f = $("#edit-form");
+  const d = state.donors.find(x => x.id === id), el = $("#edit-form").elements;
   editingId = id;
   $("#edit-title").textContent = `Edit donor ${d.id} - ${d.name}`;
-  f.phone.value = d.phone; f.city.value = d.city; f.age.value = d.age;
+  el.phone.value = d.phone; el.city.value = d.city;
   $("#edit-err").textContent = "";
   $("#edit-dialog").showModal();
 }
 $("#edit-save").addEventListener("click", e => {
-  const f = $("#edit-form"), err = validate({ phone: f.phone.value, city: f.city.value, age: f.age.value }, ["phone", "city", "age"]);
+  const el = $("#edit-form").elements;
+  const err = validate({ phone: el.phone.value, city: el.city.value }, ["phone", "city"]);
   const first = Object.values(err)[0];
   if (first) { e.preventDefault(); $("#edit-err").textContent = first; return; }
   const d = state.donors.find(x => x.id === editingId);
-  d.phone = f.phone.value.trim(); d.city = f.city.value.trim(); d.age = Number(f.age.value);
+  d.phone = el.phone.value.trim(); d.city = el.city.value.trim();
   changed();
   toast(`Donor ${d.id} updated.`);
 });
@@ -521,49 +633,86 @@ $("#donor-table").addEventListener("click", e => {
   ({ donate: recordDonation, edit: openEdit, remove: removeDonor })[b.dataset.act](id);
 });
 
-/* validation rules - same as readWords / readInt / readPhone / readDate in C */
 function validate(v, fields) {
   const e = {};
   const words = /^[A-Za-z .]+$/;
   if (fields.includes("name") && !words.test(v.name.trim())) e.name = "Use letters and spaces only.";
-  if (fields.includes("age")) {
-    const a = Number(v.age);
-    if (!/^\d+$/.test(String(v.age).trim()) || a < 18 || a > 65) e.age = "Please enter a number between 18 and 65.";
+  let age = null;
+  if (fields.includes("dob")) {
+    if (!v.dob) e.dob = "Enter the date of birth.";
+    else {
+      const dob = fromInput(v.dob);
+      age = ageOf(dob);
+      if (dateToDays(dob) > dateToDays(TODAY)) e.dob = "Date of birth cannot be in the future.";
+      else if (age < MIN_AGE) e.dob = `Donor must be at least ${MIN_AGE} (age now ${age}).`;
+      else if (age > MAX_AGE) e.dob = `Donor must be ${MAX_AGE} or younger (age now ${age}).`;
+      else if (v.never && age > MAX_FIRST_TIME_AGE) e.dob = `A first-time donor must not be above ${MAX_FIRST_TIME_AGE} (age now ${age}).`;
+    }
   }
-  if (fields.includes("gender") && !v.gender) e.gender = "Choose M, F or O.";
+  if (fields.includes("gender") && !v.gender) e.gender = "Choose a gender.";
   if (fields.includes("group") && !GROUPS.includes(v.group)) e.group = "Choose a valid blood group.";
   if (fields.includes("phone") && !/^[6-9]\d{9}$/.test(v.phone.trim())) e.phone = "Enter a valid 10-digit mobile number (starts with 6-9).";
   if (fields.includes("city") && !words.test(v.city.trim())) e.city = "Use letters and spaces only.";
+  if (fields.includes("idType") && !v.idType) e.idType = "Choose a government ID.";
+  if (fields.includes("idNumber") && v.idType) {
+    const msg = checkGovId(v.idType, v.idNumber);
+    if (msg) e.idNumber = msg;
+  }
   if (fields.includes("last") && !v.never) {
     if (!v.last) e.last = "Pick a date, or tick Never donated.";
     else {
-      const [y, m, d] = v.last.split("-").map(Number);
-      if (dateToDays({ d, m, y }) > dateToDays(TODAY)) e.last = "Date cannot be in the future.";
+      const last = fromInput(v.last);
+      if (dateToDays(last) > dateToDays(TODAY)) e.last = "Date cannot be in the future.";
+      else if (v.dob && !e.dob && ageOn(fromInput(v.dob), last) < MIN_AGE) e.last = `Donor was under ${MIN_AGE} on this date.`;
     }
   }
   return e;
 }
 
-$("#reg-form").addEventListener("submit", e => {
+const regForm = $("#reg-form"), regEl = regForm.elements;   /* elements: regForm.name would be the form's own name */
+function showAge() {
+  if (!regEl.dob.value) { $("#age-out").textContent = ""; return; }
+  const age = ageOf(fromInput(regEl.dob.value));
+  $("#age-out").textContent = age >= 0 ? `Age: ${age} years` : "";
+}
+function showIdStatus() {
+  const type = regEl.idType.value, raw = regEl.idNumber.value;
+  $("#id-hint").textContent = type ? ID_TYPES[type].hint : "Choose an ID type first.";
+  $("#id-ok").textContent = type && raw && !checkGovId(type, raw) ? `✓ Valid ${ID_TYPES[type].name} number` : "";
+}
+regEl.dob.addEventListener("input", showAge);
+regEl.idType.addEventListener("change", showIdStatus);
+regEl.idNumber.addEventListener("input", showIdStatus);
+
+regForm.addEventListener("submit", async e => {
   e.preventDefault();
-  const f = e.target, el = f.elements;   /* f.elements: f.name would be the form's own name */
-  const v = { name: el.name.value, age: el.age.value, gender: el.gender.value, group: el.group.value,
-              phone: el.phone.value, city: el.city.value, last: el.last.value, never: el.never.checked };
-  const err = validate(v, ["name", "age", "gender", "group", "phone", "city", "last"]);
-  f.querySelectorAll("[data-err]").forEach(s => { s.textContent = err[s.dataset.err] || ""; });
+  const v = { name: regEl.name.value, dob: regEl.dob.value, gender: regEl.gender.value, group: regEl.group.value,
+              phone: regEl.phone.value, city: regEl.city.value, idType: regEl.idType.value, idNumber: regEl.idNumber.value,
+              last: regEl.last.value, never: regEl.never.checked };
+  const err = validate(v, ["name", "dob", "gender", "group", "phone", "city", "idType", "idNumber", "last"]);
+  let idHash = null;
+  if (!err.idType && !err.idNumber) {
+    idHash = await idFingerprint(v.idType, v.idNumber);
+    const dup = state.donors.find(d => d.idHash === idHash);
+    if (dup) err.idNumber = `This ID is already registered to donor ${dup.id}.`;
+  }
+  regForm.querySelectorAll("[data-err]").forEach(s => { s.textContent = err[s.dataset.err] || ""; });
   if (Object.keys(err).length) return;
-  let last = null;
-  if (!v.never) { const [y, m, d] = v.last.split("-").map(Number); last = { d, m, y }; }
-  const donor = { id: state.nextId++, name: v.name.trim(), age: Number(v.age), gender: v.gender, group: v.group,
-                  phone: v.phone.trim(), city: v.city.trim(), last, times: last ? 1 : 0 };
+  const id = normalizeId(v.idNumber);
+  const donor = { id: state.nextId++, name: v.name.trim(), dob: fromInput(v.dob), gender: v.gender, group: v.group,
+                  phone: v.phone.trim(), city: v.city.trim(), last: v.never ? null : fromInput(v.last), times: v.never ? 0 : 1,
+                  idType: v.idType, idLast4: id.slice(-4), idHash };
   state.donors.push(donor);
   changed();
-  f.reset();
-  const w = daysUntilEligible(donor);
-  toast(`Donor registered with ID ${donor.id}. ${w === 0 ? "Eligible to donate now." : `Can donate again in ${w} day(s).`}`);
+  regForm.reset();
+  const el = eligibility(donor);
+  toast(`${ID_TYPES[donor.idType].name} verified. Donor registered with ID ${donor.id}. ${el.ok ? "Eligible to donate now." : el.wait ? `Can donate again in ${el.wait} day(s).` : `Not eligible: ${el.reason}.`}`);
 });
-$("#reg-form").addEventListener("reset", e => e.target.querySelectorAll("[data-err]").forEach(s => { s.textContent = ""; }));
-$("#reg-form").elements.never.addEventListener("change", e => { $("#reg-form").elements.last.disabled = e.target.checked; });
+regForm.addEventListener("reset", () => {
+  regForm.querySelectorAll("[data-err]").forEach(s => { s.textContent = ""; });
+  setTimeout(() => { showAge(); showIdStatus(); regEl.last.disabled = false; });
+});
+regEl.never.addEventListener("change", e => { regEl.last.disabled = e.target.checked; });
 
 $("#em-find").addEventListener("click", renderEmergency);
 $("#em-group").addEventListener("change", renderEmergency);
@@ -598,7 +747,7 @@ $("#rep-download").addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 $("#rep-reset").addEventListener("click", () => {
-  if (!confirm("Replace all data with the 10 sample donors and sample stock?")) return;
+  if (!confirm("Replace all data with the sample donors and sample stock?")) return;
   state = sampleState();
   changed();
   toast("Sample data restored.");
@@ -620,6 +769,7 @@ fillSelect($("#reg-group"), true);
 fillSelect($("#em-group"), false);
 fillSelect($("#is-group"), false);
 refreshCities();
+regEl.dob.max = regEl.last.max = `${TODAY.y}-${String(TODAY.m).padStart(2, "0")}-${String(TODAY.d).padStart(2, "0")}`;
 $("#today").innerHTML = `Today<br><strong>${fmtDate(TODAY)}</strong>`;
 let startTab = "dashboard";
 try { startTab = sessionStorage.getItem(KEY + "-tab") || "dashboard"; } catch (e) { /* ignore */ }
