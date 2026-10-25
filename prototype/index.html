@@ -53,6 +53,7 @@
 
   .alert-box { border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; background: var(--warn-soft); color: var(--warn); }
   .alert-box strong { display: block; margin-bottom: 2px; }
+  .alert-box ul { margin: 4px 0 0; padding-left: 18px; }
   .rules { border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; background: var(--info-soft); color: var(--ink); font-size: 14px; }
   .rules strong { color: var(--info); }
   .rules ul { margin: 6px 0 0; padding-left: 18px; }
@@ -67,6 +68,8 @@
 
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 14px; }
   label.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  label.field.wide { grid-column: 1 / -1; }
+  .req { color: var(--accent); }
   .hint { font-size: 12px; color: var(--muted); }
   input, select {
     background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0;
@@ -82,9 +85,10 @@
 
   .table-wrap { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th, td { text-align: left; padding: 9px 7px; border-bottom: 1px solid var(--line); white-space: nowrap; }
   th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
   td.num { font-variant-numeric: tabular-nums; }
+  td .sub { display: block; font-size: 11px; color: var(--muted); }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .badge.group { background: var(--accent-soft); color: var(--accent); min-width: 40px; text-align: center; }
   .badge.ok { background: var(--ok-soft); color: var(--ok); }
@@ -96,10 +100,20 @@
   .actions { display: flex; gap: 6px; }
   .empty { color: var(--muted); padding: 18px 4px; }
 
-  form.register { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  form.register fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 16px 0 4px; }
+  form.register fieldset:first-of-type { border-top: 0; padding-top: 0; }
+  form.register legend { font-weight: 700; font-size: 15px; padding: 0 0 10px; color: var(--ink); }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
   .err { color: var(--accent); font-size: 12px; min-height: 16px; }
   .okmsg { color: var(--ok); font-size: 12px; min-height: 16px; }
-  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); margin-top: 6px; }
+  .check { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: var(--ink); margin-top: 6px; }
+  .check input { margin-top: 3px; }
+
+  .questions { display: grid; gap: 8px; }
+  .q { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+  .q.fail { border-color: var(--accent); background: var(--accent-soft); }
+  .yn { display: flex; gap: 12px; white-space: nowrap; }
+  .yn label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
   .chip { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); font-weight: 600; font-size: 13px; }
@@ -108,7 +122,7 @@
 
   pre.report { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; font: 12.5px/1.5 ui-monospace, Menlo, Consolas, monospace; }
 
-  dialog { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); padding: 20px; width: min(420px, calc(100vw - 32px)); }
+  dialog { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); padding: 20px; width: min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background: rgba(0,0,0,.4); }
   dialog form { display: grid; gap: 12px; }
   .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
@@ -156,7 +170,7 @@
   <!-- Donors -->
   <section data-panel="donors" hidden>
     <h1>Donors</h1>
-    <p class="lead">Search by blood group, city or ID. Record a donation, edit or remove a donor.</p>
+    <p class="lead">Search by blood group, city, district or ID. Record a donation (after the health screening), edit or remove a donor.</p>
     <div class="panel">
       <div class="toolbar">
         <label class="field">Search by
@@ -164,6 +178,7 @@
             <option value="all">Show all</option>
             <option value="group">Blood group</option>
             <option value="city">City</option>
+            <option value="district">District</option>
             <option value="id">Donor ID</option>
           </select>
         </label>
@@ -186,51 +201,87 @@
 
   <!-- Register -->
   <section data-panel="register" hidden>
-    <h1>Register a donor</h1>
-    <p class="lead">Identity is checked against a government ID, and eligibility follows the national donor-selection rules.</p>
+    <h1>Register as a blood donor</h1>
+    <p class="lead">Fields marked <span class="req">*</span> are required. Identity is verified with Aadhaar; eligibility follows the national donor-selection guidelines.</p>
     <div class="rules">
-      <strong>Eligibility rules &mdash; NBTC Guidelines for Blood Donor Selection, 2017 (Govt. of India)</strong>
+      <strong>Who can donate &mdash; NBTC Guidelines for Blood Donor Selection, 2017 (Govt. of India)</strong>
       <ul>
         <li>Age 18&ndash;65 years. A first-time donor must not be above 60.</li>
+        <li>Body weight at least 45 kg.</li>
         <li>Gap between whole-blood donations: at least <b>90 days for men</b> and <b>120 days for women</b>. Donors who identify as Other follow the longer 120-day gap.</li>
-        <li>One valid government ID per donor; the same ID cannot be registered twice.</li>
+        <li>Haemoglobin must be at least 12.5 g/dL &mdash; this is tested at the blood bank before donation.</li>
       </ul>
     </div>
     <div class="panel">
       <form class="register" id="reg-form" novalidate>
-        <label class="field">Full name (as on ID)<input name="name" autocomplete="off"><span class="err" data-err="name"></span></label>
-        <label class="field">Date of birth<input type="date" name="dob"><span class="okmsg" id="age-out"></span><span class="err" data-err="dob"></span></label>
-        <label class="field">Gender
-          <select name="gender"><option value="">Select</option><option value="M">Male</option><option value="F">Female</option><option value="O">Other</option></select>
-          <span class="err" data-err="gender"></span></label>
-        <label class="field">Blood group
-          <select name="group" id="reg-group"><option value="">Select</option></select>
-          <span class="err" data-err="group"></span></label>
-        <label class="field">Mobile number<input name="phone" inputmode="numeric" maxlength="10"><span class="err" data-err="phone"></span></label>
-        <label class="field">City<input name="city" list="cities" autocomplete="off"><span class="err" data-err="city"></span></label>
-        <label class="field">Government ID type
-          <select name="idType" id="id-type">
-            <option value="">Select</option>
-            <option value="aadhaar">Aadhaar card</option>
-            <option value="voter">Voter ID (EPIC)</option>
-            <option value="pan">PAN card</option>
-            <option value="dl">Driving licence</option>
-            <option value="passport">Passport</option>
-          </select>
-          <span class="err" data-err="idType"></span></label>
-        <label class="field">ID number<input name="idNumber" id="id-number" autocomplete="off" spellcheck="false">
-          <span class="hint" id="id-hint">Choose an ID type first.</span>
-          <span class="okmsg" id="id-ok"></span><span class="err" data-err="idNumber"></span></label>
-        <label class="field">Last donation date
-          <input type="date" name="last">
-          <span class="check"><input type="checkbox" name="never"> Never donated</span>
-          <span class="err" data-err="last"></span></label>
-        <div style="display:flex;align-items:end;gap:10px">
+        <fieldset>
+          <legend>1. Personal details</legend>
+          <div class="fields">
+            <label class="field"><span>Full name (as on Aadhaar) <span class="req">*</span></span><input name="name" autocomplete="off"><span class="err" data-err="name"></span></label>
+            <label class="field"><span>Father's / spouse's name <span class="req">*</span></span><input name="guardian" autocomplete="off"><span class="err" data-err="guardian"></span></label>
+            <label class="field"><span>Date of birth <span class="req">*</span></span><input type="date" name="dob"><span class="okmsg" id="age-out"></span><span class="err" data-err="dob"></span></label>
+            <label class="field"><span>Gender <span class="req">*</span></span>
+              <select name="gender"><option value="">Select</option><option value="M">Male</option><option value="F">Female</option><option value="O">Other</option></select>
+              <span class="err" data-err="gender"></span></label>
+            <label class="field"><span>Blood group <span class="req">*</span></span>
+              <select name="group" id="reg-group"><option value="">Select</option></select>
+              <span class="err" data-err="group"></span></label>
+            <label class="field"><span>Body weight (kg) <span class="req">*</span></span><input name="weight" inputmode="numeric" maxlength="3"><span class="err" data-err="weight"></span></label>
+            <label class="field"><span>Mobile number <span class="req">*</span></span><input name="phone" inputmode="numeric" maxlength="10"><span class="err" data-err="phone"></span></label>
+            <label class="field">Email (optional)<input name="email" type="email" autocomplete="off"><span class="err" data-err="email"></span></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>2. Address</legend>
+          <div class="fields">
+            <label class="field wide"><span>House no. / street / locality <span class="req">*</span></span><input name="address" autocomplete="off"><span class="err" data-err="address"></span></label>
+            <label class="field"><span>City / town <span class="req">*</span></span><input name="city" list="cities" autocomplete="off"><span class="err" data-err="city"></span></label>
+            <label class="field"><span>District <span class="req">*</span></span><input name="district" autocomplete="off"><span class="err" data-err="district"></span></label>
+            <label class="field"><span>State / UT <span class="req">*</span></span><select name="state" id="reg-state"><option value="">Select</option></select><span class="err" data-err="state"></span></label>
+            <label class="field"><span>PIN code <span class="req">*</span></span><input name="pin" inputmode="numeric" maxlength="6"><span class="err" data-err="pin"></span></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Aadhaar verification</legend>
+          <div class="fields">
+            <label class="field"><span>Aadhaar number <span class="req">*</span></span><input name="aadhaar" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="XXXX XXXX XXXX">
+              <span class="hint">12 digits. Checked with the UIDAI Verhoeff checksum; only the last 4 digits are stored.</span>
+              <span class="okmsg" id="aadhaar-ok"></span><span class="err" data-err="aadhaar"></span></label>
+            <label class="field wide"><span class="check"><input type="checkbox" name="aadhaarConsent"> I consent to the use of my Aadhaar number only to verify my identity for blood donation (Aadhaar Act, 2016).</span><span class="err" data-err="aadhaarConsent"></span></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>4. Donation history</legend>
+          <div class="fields">
+            <label class="field">Last donation date
+              <input type="date" name="last">
+              <span class="check"><input type="checkbox" name="never"> I have never donated blood</span>
+              <span class="err" data-err="last"></span></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>5. Health screening</legend>
+          <p class="note" style="margin:0 0 10px">Questions from the Government of India's e-RaktKosh portal. Any answer that needs a deferral is highlighted.</p>
+          <div class="questions" id="reg-questions"></div>
+          <span class="err" data-err="health"></span>
+        </fieldset>
+
+        <fieldset>
+          <legend>6. Declaration</legend>
+          <label class="check"><input type="checkbox" name="declare"> I declare that the information given above is true, and I agree to be contacted by blood banks for voluntary blood donation.</label>
+          <span class="err" data-err="declare"></span>
+        </fieldset>
+
+        <div style="display:flex;gap:10px;margin-top:8px">
           <button class="btn primary" type="submit">Verify &amp; register</button>
           <button class="btn" type="reset">Clear</button>
         </div>
       </form>
-      <p class="note" style="margin:14px 0 0">ID check in this prototype: format rules for every ID type, plus the official Verhoeff checksum for Aadhaar. Only the last 4 characters are stored. Live verification with UIDAI / DigiLocker needs government API access and is listed as a future enhancement.</p>
+      <p class="note" style="margin:14px 0 0">Aadhaar in this prototype is checked for the correct format and the official Verhoeff checksum. Live OTP verification through UIDAI or DigiLocker needs government API access and is listed as a future enhancement.</p>
     </div>
   </section>
 
@@ -288,11 +339,30 @@
   <form method="dialog" id="edit-form">
     <h2 id="edit-title">Edit donor</h2>
     <label class="field">Mobile number<input name="phone" maxlength="10" inputmode="numeric"></label>
-    <label class="field">City<input name="city" list="cities"></label>
+    <label class="field">Email (optional)<input name="email" type="email"></label>
+    <label class="field">House no. / street / locality<input name="address"></label>
+    <label class="field">City / town<input name="city" list="cities"></label>
+    <label class="field">District<input name="district"></label>
+    <label class="field">State / UT<select name="state" id="edit-state"></select></label>
+    <label class="field">PIN code<input name="pin" maxlength="6" inputmode="numeric"></label>
+    <label class="field">Body weight (kg)<input name="weight" maxlength="3" inputmode="numeric"></label>
     <span class="err" id="edit-err"></span>
     <div class="dialog-actions">
       <button class="btn" value="cancel" formnovalidate>Cancel</button>
       <button class="btn primary" value="save" id="edit-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="screen-dialog">
+  <form method="dialog" id="screen-form">
+    <h2 id="screen-title">Pre-donation screening</h2>
+    <p class="note" style="margin:0">Answer for today. Questions from the Government of India's e-RaktKosh portal.</p>
+    <div class="questions" id="screen-questions"></div>
+    <span class="err" id="screen-err"></span>
+    <div class="dialog-actions">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="ok" id="screen-ok">Record donation</button>
     </div>
   </form>
 </dialog>
@@ -302,37 +372,46 @@
 <script>
 /* ---------- Rules ---------- */
 const GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-const LOW_STOCK = 5, KEY = "lifelink-prototype-v2";
-/* NBTC Guidelines for Blood Donor Selection (2017): whole-blood donation interval */
+const LOW_STOCK = 5, KEY = "lifelink-prototype-v3";
+/* NBTC Guidelines for Blood Donor Selection (2017) */
 const GAP_DAYS = { M: 90, F: 120, O: 120 };
-const MIN_AGE = 18, MAX_AGE = 65, MAX_FIRST_TIME_AGE = 60;
+const MIN_AGE = 18, MAX_AGE = 65, MAX_FIRST_TIME_AGE = 60, MIN_WEIGHT = 45;
 const GENDER_WORD = { M: "men", F: "women", O: "donors who identify as Other" };
+const STATES = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
+  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
+  "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"];
 
-/* name, dob [d,m,y], gender, group, phone, city, last donation [d,m,y] | null, times, ID type, last 4 of ID */
+/* Screening questions, worded as on the e-RaktKosh portal. defer = the answer that needs a deferral.
+   history: asked at registration too; the others only on the day of donation. */
+const QUESTIONS = [
+  { id: "meds",    text: "Are you currently taking any medication (e.g., antibiotics, blood thinners)?", defer: "yes", history: true, reason: "on medication" },
+  { id: "illness", text: "Have you had any infection, fever, cold, cough, weakness, dizziness, or fatigue today?", defer: "yes", history: true, reason: "unwell" },
+  { id: "surgery", text: "Have you undergone any surgery or major dental procedure recently (last 6–12 months)?", defer: "yes", history: true, reason: "recent surgery" },
+  { id: "tattoo",  text: "Have you had any tattoos, piercings, or acupuncture in the last 6 months?", defer: "yes", history: true, reason: "tattoo / piercing in last 6 months" },
+  { id: "alcohol", text: "Have you consumed alcohol in the last 24 hours?", defer: "yes", history: true, reason: "alcohol in last 24 hours" },
+  { id: "sleep",   text: "Did you have at least 6 hours of sleep last night?", defer: "no", history: false, reason: "less than 6 hours of sleep" },
+  { id: "meal",    text: "Did you eat a light (non-oily) meal 2–3 hours before donating?", defer: "no", history: false, reason: "no light meal before donating" }
+];
+
+/* name, father/spouse, dob, gender, group, weight, phone, address, city, district, pin, last, times, Aadhaar last 4 */
 const SAMPLE_DONORS = [
-  ["Ravi Kumar", [14, 3, 2002], "M", "O+", "9876543210", "Amaravati", [12, 5, 2026], 3, "aadhaar", "4821"],
-  ["Sneha Reddy", [22, 7, 2005], "F", "A+", "9123456780", "Vijayawada", [1, 9, 2026], 1, "voter", "3317"],
-  ["Arjun Varma", [5, 1, 1996], "M", "B+", "9988776655", "Guntur", null, 0, "aadhaar", "7065"],
-  ["Priya Sharma", [30, 9, 1999], "F", "O-", "8877665544", "Amaravati", [15, 6, 2026], 2, "pan", "542F"],
-  ["Mohammed Imran", [11, 11, 1990], "M", "AB+", "7766554433", "Vijayawada", [20, 3, 2026], 5, "dl", "8810"],
-  ["Divya Lakshmi", [17, 2, 2004], "F", "A-", "9012345678", "Guntur", [10, 10, 2026], 1, "aadhaar", "2294"],
-  ["Karthik Naidu", [8, 6, 1997], "M", "B-", "8123456789", "Amaravati", [5, 1, 2026], 4, "passport", "6603"],
-  ["Anjali Rao", [3, 12, 1999], "F", "AB-", "6301234567", "Vijayawada", null, 0, "aadhaar", "1187"],
-  ["Suresh Babu", [19, 4, 1981], "M", "O+", "9440012345", "Guntur", [30, 8, 2026], 6, "voter", "4472"],
-  ["Lakshmi Prasanna", [25, 8, 1994], "F", "A+", "9550067890", "Amaravati", [2, 2, 2026], 2, "aadhaar", "9930"],
-  ["Ramesh Gupta", [9, 1, 1964], "M", "O+", "9000012345", "Guntur", null, 0, "aadhaar", "5518"]
+  ["Ravi Kumar", "K. Srinivas", [14, 3, 2002], "M", "O+", 68, "9876543210", "12-4 Seed Access Road", "Amaravati", "Guntur", "522237", [12, 5, 2026], 3, "4821"],
+  ["Sneha Reddy", "P. Venkat Reddy", [22, 7, 2005], "F", "A+", 54, "9123456780", "45 Benz Circle", "Vijayawada", "NTR", "520010", [1, 9, 2026], 1, "3317"],
+  ["Arjun Varma", "R. Suresh Varma", [5, 1, 1996], "M", "B+", 72, "9988776655", "7 Brodipet 4th Line", "Guntur", "Guntur", "522002", null, 0, "7065"],
+  ["Priya Sharma", "Anil Sharma", [30, 9, 1999], "F", "O-", 58, "8877665544", "Flat 3B, Rayapudi", "Amaravati", "Guntur", "522237", [15, 6, 2026], 2, "5420"],
+  ["Mohammed Imran", "Mohammed Rafi", [11, 11, 1990], "M", "AB+", 80, "7766554433", "22 One Town", "Vijayawada", "NTR", "520001", [20, 3, 2026], 5, "8810"],
+  ["Divya Lakshmi", "S. Ramana", [17, 2, 2004], "F", "A-", 50, "9012345678", "3 Arundelpet", "Guntur", "Guntur", "522002", [10, 10, 2026], 1, "2294"],
+  ["Karthik Naidu", "G. Prasad Naidu", [8, 6, 1997], "M", "B-", 75, "8123456789", "9 Thullur Road", "Amaravati", "Guntur", "522237", [5, 1, 2026], 4, "6603"],
+  ["Anjali Rao", "V. Mohan Rao", [3, 12, 1999], "F", "AB-", 52, "6301234567", "16 Labbipet", "Vijayawada", "NTR", "520010", null, 0, "1187"],
+  ["Suresh Babu", "N. Chandra Babu", [19, 4, 1981], "M", "O+", 77, "9440012345", "5 Kothapet", "Guntur", "Guntur", "522001", [30, 8, 2026], 6, "4472"],
+  ["Lakshmi Prasanna", "B. Ravi Shankar", [25, 8, 1994], "F", "A+", 60, "9550067890", "28 Mandadam", "Amaravati", "Guntur", "522237", [2, 2, 2026], 2, "9930"],
+  ["Ramesh Gupta", "L. Hari Gupta", [9, 1, 1964], "M", "O+", 70, "9000012345", "11 Lakshmipuram", "Guntur", "Guntur", "522007", null, 0, "5518"]
 ];
 const SAMPLE_STOCK = [12, 3, 15, 2, 7, 1, 20, 4];
 
-/* ---------- Government ID checks ---------- */
-const ID_TYPES = {
-  aadhaar:  { name: "Aadhaar",  hint: "12 digits, e.g. 2XXX XXXX XXXX. Checked with the Verhoeff checksum." },
-  voter:    { name: "Voter ID", hint: "3 letters + 7 digits, e.g. ABC1234567." },
-  pan:      { name: "PAN",      hint: "10 characters, e.g. ABCPD1234E (4th letter P = individual)." },
-  dl:       { name: "DL",       hint: "State + RTO + year + number, e.g. AP09 2015 0012345." },
-  passport: { name: "Passport", hint: "1 letter + 7 digits, e.g. K1234567." }
-};
-/* Verhoeff checksum tables (used by UIDAI for the last digit of Aadhaar) */
+/* ---------- Aadhaar check (Verhoeff checksum, as used by UIDAI) ---------- */
 const VD = [[0,1,2,3,4,5,6,7,8,9],[1,2,3,4,0,6,7,8,9,5],[2,3,4,0,1,7,8,9,5,6],[3,4,0,1,2,8,9,5,6,7],[4,0,1,2,3,9,5,6,7,8],
             [5,9,8,7,6,0,4,3,2,1],[6,5,9,8,7,1,0,4,3,2],[7,6,5,9,8,2,1,0,4,3],[8,7,6,5,9,3,2,1,0,4],[9,8,7,6,5,4,3,2,1,0]];
 const VP = [[0,1,2,3,4,5,6,7,8,9],[1,5,7,6,2,8,3,0,9,4],[5,8,0,3,7,9,6,1,4,2],[8,9,1,6,0,4,3,5,2,7],
@@ -342,25 +421,14 @@ function verhoeffValid(num) {
   [...num].reverse().forEach((ch, i) => { c = VD[c][VP[i % 8][Number(ch)]]; });
   return c === 0;
 }
-const normalizeId = s => s.toUpperCase().replace(/[\s-]/g, "");
-/* returns an error message, or "" when the ID is valid */
-function checkGovId(type, raw) {
-  const v = normalizeId(raw);
-  switch (type) {
-    case "aadhaar":
-      if (!/^[2-9]\d{11}$/.test(v)) return "Aadhaar must be 12 digits and cannot start with 0 or 1.";
-      return verhoeffValid(v) ? "" : "Invalid Aadhaar number (checksum failed).";
-    case "voter":    return /^[A-Z]{3}\d{7}$/.test(v) ? "" : "Voter ID must be 3 letters followed by 7 digits.";
-    case "pan":
-      if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(v)) return "PAN must be 5 letters, 4 digits, 1 letter.";
-      return v[3] === "P" ? "" : "This PAN is not an individual's PAN (4th letter must be P).";
-    case "dl":       return /^[A-Z]{2}\d{2}(19|20)\d{2}\d{7}$/.test(v) ? "" : "Driving licence must look like AP09 2015 0012345.";
-    case "passport": return /^[A-Z][1-9]\d{6}$/.test(v) ? "" : "Passport number must be 1 letter followed by 7 digits.";
-    default:         return "Choose an ID type.";
-  }
+const digitsOnly = s => s.replace(/[\s-]/g, "");
+function checkAadhaar(raw) {
+  const v = digitsOnly(raw);
+  if (!/^[2-9]\d{11}$/.test(v)) return "Aadhaar must be 12 digits and cannot start with 0 or 1.";
+  return verhoeffValid(v) ? "" : "Invalid Aadhaar number (checksum failed). Please check the digits.";
 }
-async function idFingerprint(type, raw) {
-  const text = `${type}:${normalizeId(raw)}`;
+async function aadhaarFingerprint(raw) {
+  const text = "aadhaar:" + digitsOnly(raw);
   try {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -392,6 +460,7 @@ function eligibility(d) {
   const age = ageOf(d.dob);
   if (age < MIN_AGE) return { ok: false, wait: 0, reason: `Under ${MIN_AGE}` };
   if (age > MAX_AGE) return { ok: false, wait: 0, reason: `Over ${MAX_AGE}` };
+  if (d.weight < MIN_WEIGHT) return { ok: false, wait: 0, reason: `Weight below ${MIN_WEIGHT} kg` };
   if (!d.last) {
     if (age > MAX_FIRST_TIME_AGE) return { ok: false, wait: 0, reason: `First-time donor over ${MAX_FIRST_TIME_AGE}` };
     return { ok: true, wait: 0, reason: "" };
@@ -415,9 +484,10 @@ function sampleState() {
   return {
     nextId: SAMPLE_DONORS.length + 1,
     stock: SAMPLE_STOCK.slice(),
-    donors: SAMPLE_DONORS.map(([name, dob, gender, group, phone, city, last, times, idType, idLast4], i) => ({
-      id: i + 1, name, dob: toDate(dob), gender, group, phone, city, last: toDate(last), times,
-      idType, idLast4, idHash: `sample-${i + 1}`
+    donors: SAMPLE_DONORS.map(([name, guardian, dob, gender, group, weight, phone, address, city, district, pin, last, times, aadhaarLast4], i) => ({
+      id: i + 1, name, guardian, dob: toDate(dob), gender, group, weight, phone, email: "",
+      address, city, district, state: "Andhra Pradesh", pin, last: toDate(last), times,
+      aadhaarLast4, aadhaarHash: `sample-${i + 1}`
     }))
   };
 }
@@ -442,23 +512,25 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 4000);
 }
 function statusBadge(d) {
   const e = eligibility(d);
   if (e.ok) return '<span class="badge ok">Eligible</span>';
-  if (e.wait) return `<span class="badge wait" title="${esc(e.reason)}">Wait ${e.wait}d</span>`;
+  if (e.wait) return `<span class="badge wait">Wait ${e.wait}d</span><span class="why">${esc(e.reason)}</span>`;
   return `<span class="badge bad">Not eligible</span><span class="why">${esc(e.reason)}</span>`;
 }
-const idProof = d => `<span class="idproof"><span class="tick" title="Government ID verified">&#10003;</span> ${ID_TYPES[d.idType].name} &bull;&bull;${esc(d.idLast4)}</span>`;
+const idProof = d => `<span class="idproof"><span class="tick" title="Aadhaar verified">&#10003;</span> Aadhaar &bull;&bull;${esc(d.aadhaarLast4)}</span>`;
 function donorTable(list, withActions) {
   if (!list.length) return '<p class="empty">No matching donor found.</p>';
   const rows = list.map(d => `<tr>
-      <td class="num">${d.id}</td><td>${esc(d.name)}</td><td class="num">${ageOf(d.dob)}</td><td>${d.gender}</td>
-      <td><span class="badge group">${d.group}</span></td><td class="num">${d.phone}</td><td>${esc(d.city)}</td>
+      <td class="num">${d.id}</td><td>${esc(d.name)}<span class="sub">${{ M: "S/o", F: "D/o", O: "C/o" }[d.gender]} ${esc(d.guardian)}</span></td>
+      <td class="num">${ageOf(d.dob)}</td><td>${d.gender}</td>
+      <td><span class="badge group">${d.group}</span></td><td class="num">${d.phone}</td>
+      <td>${esc(d.city)}<span class="sub">${esc(d.district)} dist., ${esc(d.pin)}</span></td>
       <td class="num">${fmtDate(d.last)}</td><td>${idProof(d)}</td><td>${statusBadge(d)}</td>
       ${withActions ? `<td class="actions">
-        <button class="btn small" data-act="donate" data-id="${d.id}" title="Record a donation today">Donate</button>
+        <button class="btn small" data-act="donate" data-id="${d.id}" title="Screen and record a donation today">Donate</button>
         <button class="btn small" data-act="edit" data-id="${d.id}">Edit</button>
         <button class="btn small danger" data-act="remove" data-id="${d.id}">Remove</button></td>` : ""}
     </tr>`).join("");
@@ -475,8 +547,29 @@ function stockBars(target) {
   }).join("");
 }
 function lowGroups() { return GROUPS.filter((g, i) => state.stock[i] < LOW_STOCK); }
-function fillSelect(sel, withBlank) {
-  sel.innerHTML = (withBlank ? '<option value="">Select</option>' : "") + GROUPS.map(g => `<option>${g}</option>`).join("");
+function fillSelect(sel, list, withBlank) {
+  sel.innerHTML = (withBlank ? '<option value="">Select</option>' : "") + list.map(g => `<option>${esc(g)}</option>`).join("");
+}
+function renderQuestions(container, prefix, onlyHistory) {
+  container.innerHTML = QUESTIONS.filter(q => !onlyHistory || q.history).map(q => `
+    <div class="q" data-q="${q.id}"><span>${esc(q.text)}</span>
+      <span class="yn"><label><input type="radio" name="${prefix}-${q.id}" value="yes"> Yes</label>
+      <label><input type="radio" name="${prefix}-${q.id}" value="no"> No</label></span></div>`).join("");
+  container.addEventListener("change", () => markAnswers(container, prefix));
+}
+/* returns { unanswered, deferrals[] } and highlights answers that need a deferral */
+function markAnswers(container, prefix) {
+  let unanswered = 0;
+  const deferrals = [];
+  container.querySelectorAll(".q").forEach(row => {
+    const q = QUESTIONS.find(x => x.id === row.dataset.q);
+    const pick = container.querySelector(`input[name="${prefix}-${q.id}"]:checked`);
+    if (!pick) unanswered++;
+    const fail = pick && pick.value === q.defer;
+    row.classList.toggle("fail", !!fail);
+    if (fail) deferrals.push(q.reason);
+  });
+  return { unanswered, deferrals };
 }
 
 /* ---------- Views ---------- */
@@ -508,6 +601,7 @@ function renderDonors() {
   if (mode !== "all" && value) {
     if (mode === "group") list = list.filter(d => sameText(d.group, value));
     if (mode === "city") list = list.filter(d => sameText(d.city, value));
+    if (mode === "district") list = list.filter(d => sameText(d.district, value));
     if (mode === "id") list = list.filter(d => d.id === Number(value));
   }
   const sort = $("#sort-by").value;
@@ -549,14 +643,14 @@ function reportText() {
   const pad = (s, n) => String(s).slice(0, n).padEnd(n);
   let out = "LifeLink - Blood Bank & Donor Finder\n";
   out += `Donor report generated on ${fmtDate(TODAY)}\n`;
-  out += "Eligibility: NBTC 2017 - age 18-65 (first-time donor up to 60), 90 days (men) / 120 days (women) between donations\n\n";
-  out += `${pad("ID", 4)} ${pad("Name", 18)} ${pad("Age", 4)} ${pad("Sex", 4)}${pad("Grp", 4)} ${pad("Phone", 10)}  ${pad("City", 11)} ${pad("Last Donated", 12)} ${pad("ID proof", 15)} Status\n`;
+  out += "Eligibility: NBTC 2017 - age 18-65 (first-time donor up to 60), weight 45 kg+, 90 days (men) / 120 days (women) between donations\n\n";
+  out += `${pad("ID", 4)} ${pad("Name", 18)} ${pad("Age", 4)} ${pad("Sex", 4)}${pad("Grp", 4)} ${pad("Phone", 10)}  ${pad("City", 11)} ${pad("District", 9)} ${pad("PIN", 7)}${pad("Last Donated", 12)} ${pad("Aadhaar", 9)} Status\n`;
   let eligible = 0;
   for (const d of state.donors) {
     const e = eligibility(d);
     if (e.ok) eligible++;
     const status = e.ok ? "Eligible" : e.wait ? `Wait ${e.wait} days` : `Not eligible (${e.reason})`;
-    out += `${pad(d.id, 4)} ${pad(d.name, 18)} ${pad(ageOf(d.dob), 4)} ${pad(d.gender, 4)}${pad(d.group, 4)} ${pad(d.phone, 10)}  ${pad(d.city, 11)} ${pad(fmtDate(d.last), 12)} ${pad(`${ID_TYPES[d.idType].name} ..${d.idLast4}`, 15)} ${status}\n`;
+    out += `${pad(d.id, 4)} ${pad(d.name, 18)} ${pad(ageOf(d.dob), 4)} ${pad(d.gender, 4)}${pad(d.group, 4)} ${pad(d.phone, 10)}  ${pad(d.city, 11)} ${pad(d.district, 9)} ${pad(d.pin, 7)}${pad(fmtDate(d.last), 12)} ${pad("xx" + d.aadhaarLast4, 9)} ${status}\n`;
   }
   out += "\nBlood stock (units):\n";
   GROUPS.forEach((g, i) => { out += `  ${pad(g, 4)} ${String(state.stock[i]).padStart(3)}${state.stock[i] < LOW_STOCK ? "  LOW" : ""}\n`; });
@@ -580,7 +674,116 @@ function refreshCities() {
 }
 function changed() { save(); refreshCities(); RENDER[current](); }
 
-/* ---------- Actions ---------- */
+/* ---------- Validation (shared by register and edit) ---------- */
+function validate(v, fields) {
+  const e = {};
+  const words = /^[A-Za-z .]+$/;
+  const has = f => fields.includes(f);
+  const textCheck = (f, extra) => {
+    if (!has(f)) return;
+    if (!v[f].trim()) e[f] = "This field is required.";
+    else if (!words.test(v[f].trim())) e[f] = "Use letters and spaces only" + (extra || ".");
+  };
+  textCheck("name", ", as on Aadhaar.");
+  textCheck("guardian");
+  if (has("dob")) {
+    if (!v.dob) e.dob = "Enter the date of birth.";
+    else {
+      const dob = fromInput(v.dob), age = ageOf(dob);
+      if (dateToDays(dob) > dateToDays(TODAY)) e.dob = "Date of birth cannot be in the future.";
+      else if (age < MIN_AGE) e.dob = `Donor must be at least ${MIN_AGE} (age now ${age}).`;
+      else if (age > MAX_AGE) e.dob = `Donor must be ${MAX_AGE} or younger (age now ${age}).`;
+      else if (v.never && age > MAX_FIRST_TIME_AGE) e.dob = `A first-time donor must not be above ${MAX_FIRST_TIME_AGE} (age now ${age}).`;
+    }
+  }
+  if (has("gender") && !v.gender) e.gender = "Choose a gender.";
+  if (has("group") && !GROUPS.includes(v.group)) e.group = "Choose a valid blood group.";
+  if (has("weight")) {
+    const w = Number(v.weight);
+    if (!/^\d{2,3}$/.test(String(v.weight).trim()) || w > 250) e.weight = "Enter the weight in kg.";
+    else if (w < MIN_WEIGHT) e.weight = `Minimum weight for donation is ${MIN_WEIGHT} kg.`;
+  }
+  if (has("phone") && !/^[6-9]\d{9}$/.test(v.phone.trim())) e.phone = "Enter a valid 10-digit mobile number (starts with 6-9).";
+  if (has("email") && v.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email.trim())) e.email = "Enter a valid email address, or leave it empty.";
+  if (has("address") && v.address.trim().length < 5) e.address = "Enter the house number and street.";
+  textCheck("city");
+  textCheck("district");
+  if (has("state") && !STATES.includes(v.state)) e.state = "Choose a state or union territory.";
+  if (has("pin") && !/^[1-9]\d{5}$/.test(v.pin.trim())) e.pin = "PIN code must be 6 digits and cannot start with 0.";
+  if (has("aadhaar")) { const msg = checkAadhaar(v.aadhaar); if (msg) e.aadhaar = msg; }
+  if (has("aadhaarConsent") && !v.aadhaarConsent) e.aadhaarConsent = "Consent is required to verify identity with Aadhaar.";
+  if (has("last") && !v.never) {
+    if (!v.last) e.last = "Pick a date, or tick \"I have never donated blood\".";
+    else {
+      const last = fromInput(v.last);
+      if (dateToDays(last) > dateToDays(TODAY)) e.last = "Date cannot be in the future.";
+      else if (v.dob && !e.dob && ageOn(fromInput(v.dob), last) < MIN_AGE) e.last = `Donor was under ${MIN_AGE} on this date.`;
+    }
+  }
+  if (has("declare") && !v.declare) e.declare = "Please accept the declaration.";
+  return e;
+}
+
+/* ---------- Register ---------- */
+const regForm = $("#reg-form"), regEl = regForm.elements;   /* elements: regForm.name would be the form's own name */
+function showAge() {
+  if (!regEl.dob.value) { $("#age-out").textContent = ""; return; }
+  const age = ageOf(fromInput(regEl.dob.value));
+  $("#age-out").textContent = age >= 0 ? `Age: ${age} years` : "";
+}
+function showAadhaarStatus() {
+  const raw = regEl.aadhaar.value;
+  $("#aadhaar-ok").textContent = raw && !checkAadhaar(raw) ? "✓ Valid Aadhaar number" : "";
+}
+regEl.dob.addEventListener("input", showAge);
+regEl.aadhaar.addEventListener("input", showAadhaarStatus);
+regEl.never.addEventListener("change", e => { regEl.last.disabled = e.target.checked; });
+
+regForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const field = n => regEl[n].type === "checkbox" ? regEl[n].checked : regEl[n].value;
+  const names = ["name", "guardian", "dob", "gender", "group", "weight", "phone", "email", "address", "city", "district",
+                 "state", "pin", "aadhaar", "aadhaarConsent", "last", "never", "declare"];
+  const v = Object.fromEntries(names.map(n => [n, field(n)]));
+  const err = validate(v, names);
+  const health = markAnswers($("#reg-questions"), "reg");
+  if (health.unanswered) err.health = "Please answer every health question.";
+  else if (health.deferrals.length) err.health = `Not eligible to register right now: ${health.deferrals.join(", ")}. Please register after the deferral period.`;
+  let aadhaarHash = null;
+  if (!err.aadhaar) {
+    aadhaarHash = await aadhaarFingerprint(v.aadhaar);
+    const dup = state.donors.find(d => d.aadhaarHash === aadhaarHash);
+    if (dup) err.aadhaar = `This Aadhaar is already registered to donor ${dup.id}.`;
+  }
+  regForm.querySelectorAll("[data-err]").forEach(s => { s.textContent = err[s.dataset.err] || ""; });
+  if (Object.keys(err).length) {
+    const first = regForm.querySelector(".err:not(:empty)");
+    if (first) first.closest("label, fieldset").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  const donor = {
+    id: state.nextId++, name: v.name.trim(), guardian: v.guardian.trim(), dob: fromInput(v.dob), gender: v.gender,
+    group: v.group, weight: Number(v.weight), phone: v.phone.trim(), email: v.email.trim(),
+    address: v.address.trim(), city: v.city.trim(), district: v.district.trim(), state: v.state, pin: v.pin.trim(),
+    last: v.never ? null : fromInput(v.last), times: v.never ? 0 : 1,
+    aadhaarLast4: digitsOnly(v.aadhaar).slice(-4), aadhaarHash
+  };
+  state.donors.push(donor);
+  changed();
+  regForm.reset();
+  const el = eligibility(donor);
+  toast(`Aadhaar verified. Donor registered with ID ${donor.id}. ${el.ok ? "Eligible to donate now." : el.wait ? `Can donate again in ${el.wait} day(s).` : `Not eligible: ${el.reason}.`}`);
+});
+regForm.addEventListener("reset", () => {
+  regForm.querySelectorAll("[data-err]").forEach(s => { s.textContent = ""; });
+  setTimeout(() => {
+    showAge(); showAadhaarStatus(); regEl.last.disabled = false;
+    $("#reg-questions").querySelectorAll(".q").forEach(r => r.classList.remove("fail"));
+  });
+});
+
+/* ---------- Donate (with pre-donation screening), edit, remove ---------- */
+let screeningId = null;
 function recordDonation(id) {
   const d = state.donors.find(x => x.id === id);
   const e = eligibility(d);
@@ -590,30 +793,45 @@ function recordDonation(id) {
       : `${d.name} is not eligible (${e.reason}). Donation not recorded.`);
     return;
   }
-  if (!confirm(`Record one unit donated today by ${d.name} (${d.group})?`)) return;
+  screeningId = id;
+  $("#screen-title").textContent = `Pre-donation screening - ${d.name} (${d.group})`;
+  $("#screen-form").reset();
+  $("#screen-err").textContent = "";
+  $("#screen-questions").querySelectorAll(".q").forEach(r => r.classList.remove("fail"));
+  $("#screen-dialog").showModal();
+}
+$("#screen-ok").addEventListener("click", ev => {
+  const result = markAnswers($("#screen-questions"), "scr");
+  if (result.unanswered) { ev.preventDefault(); $("#screen-err").textContent = "Please answer every question."; return; }
+  const d = state.donors.find(x => x.id === screeningId);
+  if (result.deferrals.length) {
+    toast(`${d.name} is deferred today (${result.deferrals.join(", ")}). Donation not recorded.`);
+    return;
+  }
   d.last = { ...TODAY };
   d.times++;
   state.stock[groupIndex(d.group)]++;
   changed();
   toast(`Thank you, ${d.name}! ${d.group} stock is now ${state.stock[groupIndex(d.group)]} unit(s). Next donation allowed after ${GAP_DAYS[d.gender]} days.`);
-}
+});
 
 let editingId = null;
 function openEdit(id) {
   const d = state.donors.find(x => x.id === id), el = $("#edit-form").elements;
   editingId = id;
   $("#edit-title").textContent = `Edit donor ${d.id} - ${d.name}`;
-  el.phone.value = d.phone; el.city.value = d.city;
+  ["phone", "email", "address", "city", "district", "state", "pin", "weight"].forEach(n => { el[n].value = d[n]; });
   $("#edit-err").textContent = "";
   $("#edit-dialog").showModal();
 }
 $("#edit-save").addEventListener("click", e => {
   const el = $("#edit-form").elements;
-  const err = validate({ phone: el.phone.value, city: el.city.value }, ["phone", "city"]);
-  const first = Object.values(err)[0];
+  const names = ["phone", "email", "address", "city", "district", "state", "pin", "weight"];
+  const v = Object.fromEntries(names.map(n => [n, el[n].value]));
+  const first = Object.values(validate(v, names))[0];
   if (first) { e.preventDefault(); $("#edit-err").textContent = first; return; }
   const d = state.donors.find(x => x.id === editingId);
-  d.phone = el.phone.value.trim(); d.city = el.city.value.trim();
+  names.forEach(n => { d[n] = n === "weight" ? Number(v[n]) : String(v[n]).trim(); });
   changed();
   toast(`Donor ${d.id} updated.`);
 });
@@ -633,87 +851,7 @@ $("#donor-table").addEventListener("click", e => {
   ({ donate: recordDonation, edit: openEdit, remove: removeDonor })[b.dataset.act](id);
 });
 
-function validate(v, fields) {
-  const e = {};
-  const words = /^[A-Za-z .]+$/;
-  if (fields.includes("name") && !words.test(v.name.trim())) e.name = "Use letters and spaces only.";
-  let age = null;
-  if (fields.includes("dob")) {
-    if (!v.dob) e.dob = "Enter the date of birth.";
-    else {
-      const dob = fromInput(v.dob);
-      age = ageOf(dob);
-      if (dateToDays(dob) > dateToDays(TODAY)) e.dob = "Date of birth cannot be in the future.";
-      else if (age < MIN_AGE) e.dob = `Donor must be at least ${MIN_AGE} (age now ${age}).`;
-      else if (age > MAX_AGE) e.dob = `Donor must be ${MAX_AGE} or younger (age now ${age}).`;
-      else if (v.never && age > MAX_FIRST_TIME_AGE) e.dob = `A first-time donor must not be above ${MAX_FIRST_TIME_AGE} (age now ${age}).`;
-    }
-  }
-  if (fields.includes("gender") && !v.gender) e.gender = "Choose a gender.";
-  if (fields.includes("group") && !GROUPS.includes(v.group)) e.group = "Choose a valid blood group.";
-  if (fields.includes("phone") && !/^[6-9]\d{9}$/.test(v.phone.trim())) e.phone = "Enter a valid 10-digit mobile number (starts with 6-9).";
-  if (fields.includes("city") && !words.test(v.city.trim())) e.city = "Use letters and spaces only.";
-  if (fields.includes("idType") && !v.idType) e.idType = "Choose a government ID.";
-  if (fields.includes("idNumber") && v.idType) {
-    const msg = checkGovId(v.idType, v.idNumber);
-    if (msg) e.idNumber = msg;
-  }
-  if (fields.includes("last") && !v.never) {
-    if (!v.last) e.last = "Pick a date, or tick Never donated.";
-    else {
-      const last = fromInput(v.last);
-      if (dateToDays(last) > dateToDays(TODAY)) e.last = "Date cannot be in the future.";
-      else if (v.dob && !e.dob && ageOn(fromInput(v.dob), last) < MIN_AGE) e.last = `Donor was under ${MIN_AGE} on this date.`;
-    }
-  }
-  return e;
-}
-
-const regForm = $("#reg-form"), regEl = regForm.elements;   /* elements: regForm.name would be the form's own name */
-function showAge() {
-  if (!regEl.dob.value) { $("#age-out").textContent = ""; return; }
-  const age = ageOf(fromInput(regEl.dob.value));
-  $("#age-out").textContent = age >= 0 ? `Age: ${age} years` : "";
-}
-function showIdStatus() {
-  const type = regEl.idType.value, raw = regEl.idNumber.value;
-  $("#id-hint").textContent = type ? ID_TYPES[type].hint : "Choose an ID type first.";
-  $("#id-ok").textContent = type && raw && !checkGovId(type, raw) ? `✓ Valid ${ID_TYPES[type].name} number` : "";
-}
-regEl.dob.addEventListener("input", showAge);
-regEl.idType.addEventListener("change", showIdStatus);
-regEl.idNumber.addEventListener("input", showIdStatus);
-
-regForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const v = { name: regEl.name.value, dob: regEl.dob.value, gender: regEl.gender.value, group: regEl.group.value,
-              phone: regEl.phone.value, city: regEl.city.value, idType: regEl.idType.value, idNumber: regEl.idNumber.value,
-              last: regEl.last.value, never: regEl.never.checked };
-  const err = validate(v, ["name", "dob", "gender", "group", "phone", "city", "idType", "idNumber", "last"]);
-  let idHash = null;
-  if (!err.idType && !err.idNumber) {
-    idHash = await idFingerprint(v.idType, v.idNumber);
-    const dup = state.donors.find(d => d.idHash === idHash);
-    if (dup) err.idNumber = `This ID is already registered to donor ${dup.id}.`;
-  }
-  regForm.querySelectorAll("[data-err]").forEach(s => { s.textContent = err[s.dataset.err] || ""; });
-  if (Object.keys(err).length) return;
-  const id = normalizeId(v.idNumber);
-  const donor = { id: state.nextId++, name: v.name.trim(), dob: fromInput(v.dob), gender: v.gender, group: v.group,
-                  phone: v.phone.trim(), city: v.city.trim(), last: v.never ? null : fromInput(v.last), times: v.never ? 0 : 1,
-                  idType: v.idType, idLast4: id.slice(-4), idHash };
-  state.donors.push(donor);
-  changed();
-  regForm.reset();
-  const el = eligibility(donor);
-  toast(`${ID_TYPES[donor.idType].name} verified. Donor registered with ID ${donor.id}. ${el.ok ? "Eligible to donate now." : el.wait ? `Can donate again in ${el.wait} day(s).` : `Not eligible: ${el.reason}.`}`);
-});
-regForm.addEventListener("reset", () => {
-  regForm.querySelectorAll("[data-err]").forEach(s => { s.textContent = ""; });
-  setTimeout(() => { showAge(); showIdStatus(); regEl.last.disabled = false; });
-});
-regEl.never.addEventListener("change", e => { regEl.last.disabled = e.target.checked; });
-
+/* ---------- Emergency, stock, report ---------- */
 $("#em-find").addEventListener("click", renderEmergency);
 $("#em-group").addEventListener("change", renderEmergency);
 
@@ -754,7 +892,7 @@ $("#rep-reset").addEventListener("click", () => {
 });
 
 $("#search-mode").addEventListener("change", () => {
-  const ph = { group: "e.g. B+", city: "e.g. Guntur", id: "e.g. 7" }[$("#search-mode").value] || "";
+  const ph = { group: "e.g. B+", city: "e.g. Guntur", district: "e.g. NTR", id: "e.g. 7" }[$("#search-mode").value] || "";
   $("#search-value").placeholder = ph;
   $("#search-value").value = "";
   renderDonors();
@@ -765,9 +903,13 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
 
 /* ---------- Start ---------- */
 load();
-fillSelect($("#reg-group"), true);
-fillSelect($("#em-group"), false);
-fillSelect($("#is-group"), false);
+fillSelect($("#reg-group"), GROUPS, true);
+fillSelect($("#em-group"), GROUPS, false);
+fillSelect($("#is-group"), GROUPS, false);
+fillSelect($("#reg-state"), STATES, true);
+fillSelect($("#edit-state"), STATES, false);
+renderQuestions($("#reg-questions"), "reg", true);
+renderQuestions($("#screen-questions"), "scr", false);
 refreshCities();
 regEl.dob.max = regEl.last.max = `${TODAY.y}-${String(TODAY.m).padStart(2, "0")}-${String(TODAY.d).padStart(2, "0")}`;
 $("#today").innerHTML = `Today<br><strong>${fmtDate(TODAY)}</strong>`;
