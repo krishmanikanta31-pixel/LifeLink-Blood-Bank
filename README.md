@@ -43,7 +43,7 @@ Works with any C99 compiler (GCC, Clang, MinGW, Code::Blocks). On Windows run `b
 
 `prototype/index.html` is a clickable web version of LifeLink with the same registration fields, rules and sample data. It runs in any browser with no install.
 
-- Live: https://lifelink-blood-bank-prototype-3afv.vercel.app
+- Live: https://lifelinkbloodbank.vercel.app
 - Also on GitHub Pages: https://krishmanikanta31-pixel.github.io/LifeLink-Blood-Bank/prototype/
 
 ## Syllabus coverage (Modules 1–4)
