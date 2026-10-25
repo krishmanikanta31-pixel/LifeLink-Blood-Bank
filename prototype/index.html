@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LifeLink Prototype</title>
+<style>
+  :root {
+    --bg: #f6f4f2; --panel: #ffffff; --ink: #1f1b19; --muted: #6d655f; --line: #e6e0da;
+    --accent: #c62828; --accent-ink: #ffffff; --accent-soft: #fbe9e9;
+    --ok: #2e7d32; --ok-soft: #e7f3e8; --warn: #a15c00; --warn-soft: #fff2dc;
+    --radius: 12px; --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151312; --panel: #1f1c1b; --ink: #f2eeea; --muted: #a8a09a; --line: #36312e;
+      --accent: #ef5350; --accent-ink: #1a0a0a; --accent-soft: #3b1e1e;
+      --ok: #6cc070; --ok-soft: #1c2e1d; --warn: #ffb74d; --warn-soft: #3a2b14;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font); }
+  button, input, select { font: inherit; color: inherit; }
+
+  header { background: var(--panel); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1100px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .brand small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+  .today { margin-left: auto; color: var(--muted); font-size: 13px; text-align: right; }
+  nav { max-width: 1100px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
+  nav button {
+    border: 0; background: none; padding: 10px 14px; border-bottom: 2px solid transparent;
+    color: var(--muted); cursor: pointer; white-space: nowrap;
+  }
+  nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  nav button.emergency { color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 20px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+  .grid { display: grid; gap: 16px; }
+  .tiles { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 16px; }
+  .two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .tile .label { color: var(--muted); font-size: 13px; }
+  .tile .value { font-size: 30px; font-weight: 700; line-height: 1.2; }
+  .tile.alert .value { color: var(--accent); }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+
+  .alert-box { border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; background: var(--warn-soft); color: var(--warn); }
+  .alert-box strong { display: block; margin-bottom: 2px; }
+
+  .stock-row { display: grid; grid-template-columns: 44px 1fr 64px; align-items: center; gap: 10px; padding: 5px 0; }
+  .stock-row .g { font-weight: 600; }
+  .track { height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .fill { height: 100%; background: var(--ok); border-radius: 6px; }
+  .fill.low { background: var(--accent); }
+  .stock-row .n { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .stock-row .n.low { color: var(--accent); font-weight: 600; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 14px; }
+  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  input, select {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .btn.small { padding: 4px 10px; font-size: 13px; }
+  .btn.danger { color: var(--accent); }
+
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .badge.group { background: var(--accent-soft); color: var(--accent); min-width: 40px; text-align: center; }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .badge.wait { background: var(--warn-soft); color: var(--warn); }
+  .actions { display: flex; gap: 6px; }
+  .empty { color: var(--muted); padding: 18px 4px; }
+
+  form.register { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .err { color: var(--accent); font-size: 12px; min-height: 16px; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); margin-top: 6px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+  .chip { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); font-weight: 600; font-size: 13px; }
+  .chip.exact { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .note { color: var(--muted); font-size: 13px; }
+
+  pre.report { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; font: 12.5px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+
+  dialog { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); padding: 20px; width: min(420px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog form { display: grid; gap: 12px; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0;
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px;
+    transition: .2s; pointer-events: none; max-width: calc(100vw - 32px); text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .footer-note { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2s7 7.6 7 12.5A7 7 0 0 1 5 14.5C5 9.6 12 2 12 2z" fill="var(--accent)"/><path d="M9 14h6M12 11v6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+    <div class="brand"><div>LifeLink<small>Blood Bank &amp; Donor Finder</small></div></div>
+    <div class="today" id="today"></div>
+  </div>
+  <nav role="tablist">
+    <button role="tab" data-view="dashboard" aria-selected="true">Dashboard</button>
+    <button role="tab" data-view="donors">Donors</button>
+    <button role="tab" data-view="register">Register donor</button>
+    <button role="tab" data-view="emergency" class="emergency">Emergency</button>
+    <button role="tab" data-view="stock">Blood stock</button>
+    <button role="tab" data-view="report">Report</button>
+  </nav>
+</header>
+
+<main>
+  <!-- Dashboard -->
+  <section data-panel="dashboard">
+    <h1>Dashboard</h1>
+    <p class="lead">Donors, eligibility and blood stock at a glance.</p>
+    <div id="dash-alert"></div>
+    <div class="grid tiles" id="tiles"></div>
+    <div class="grid two">
+      <div class="panel"><h2>Blood stock (units)</h2><div id="dash-stock"></div></div>
+      <div class="panel"><h2>Donors per blood group</h2><div id="dash-groups"></div></div>
+    </div>
+  </section>
+
+  <!-- Donors -->
+  <section data-panel="donors" hidden>
+    <h1>Donors</h1>
+    <p class="lead">Search by blood group, city or ID. Record a donation, edit or remove a donor.</p>
+    <div class="panel">
+      <div class="toolbar">
+        <label class="field">Search by
+          <select id="search-mode">
+            <option value="all">Show all</option>
+            <option value="group">Blood group</option>
+            <option value="city">City</option>
+            <option value="id">Donor ID</option>
+          </select>
+        </label>
+        <label class="field" id="search-value-wrap" hidden>Value
+          <input id="search-value" placeholder="e.g. B+" autocomplete="off">
+        </label>
+        <label class="field">Sort by
+          <select id="sort-by">
+            <option value="id">ID</option>
+            <option value="name">Name</option>
+            <option value="group">Blood group</option>
+            <option value="city">City</option>
+          </select>
+        </label>
+      </div>
+      <div class="table-wrap" id="donor-table"></div>
+      <p class="note" id="donor-summary"></p>
+    </div>
+  </section>
+
+  <!-- Register -->
+  <section data-panel="register" hidden>
+    <h1>Register a donor</h1>
+    <p class="lead">Every field is checked with the same rules as the C program.</p>
+    <div class="panel">
+      <form class="register" id="reg-form" novalidate>
+        <label class="field">Full name<input name="name" autocomplete="off"><span class="err" data-err="name"></span></label>
+        <label class="field">Age (18&ndash;65)<input name="age" inputmode="numeric"><span class="err" data-err="age"></span></label>
+        <label class="field">Gender
+          <select name="gender"><option value="">Select</option><option>M</option><option>F</option><option>O</option></select>
+          <span class="err" data-err="gender"></span></label>
+        <label class="field">Blood group
+          <select name="group" id="reg-group"><option value="">Select</option></select>
+          <span class="err" data-err="group"></span></label>
+        <label class="field">Mobile number<input name="phone" inputmode="numeric" maxlength="10"><span class="err" data-err="phone"></span></label>
+        <label class="field">City<input name="city" list="cities" autocomplete="off"><span class="err" data-err="city"></span></label>
+        <label class="field">Last donation date
+          <input type="date" name="last">
+          <span class="check"><input type="checkbox" name="never"> Never donated</span>
+          <span class="err" data-err="last"></span></label>
+        <div style="display:flex;align-items:end;gap:10px">
+          <button class="btn primary" type="submit">Register donor</button>
+          <button class="btn" type="reset">Clear</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Emergency -->
+  <section data-panel="emergency" hidden>
+    <h1>Emergency donor finder</h1>
+    <p class="lead">Enter the patient's blood group to see every compatible, eligible donor &mdash; exact matches first.</p>
+    <div class="panel">
+      <div class="toolbar">
+        <label class="field">Patient blood group<select id="em-group"></select></label>
+        <label class="field">City (optional)<input id="em-city" list="cities" placeholder="All cities" autocomplete="off"></label>
+        <button class="btn primary" id="em-find">Find donors</button>
+      </div>
+      <div id="em-result"><p class="empty">Choose a blood group and press Find donors.</p></div>
+    </div>
+  </section>
+
+  <!-- Stock -->
+  <section data-panel="stock" hidden>
+    <h1>Blood stock</h1>
+    <p class="lead">Issue blood to a patient. If the group is short, only compatible substitutes are offered.</p>
+    <div class="grid two">
+      <div class="panel"><h2>Units available</h2><div id="stock-bars"></div></div>
+      <div class="panel">
+        <h2>Issue blood</h2>
+        <div class="toolbar">
+          <label class="field">Patient blood group<select id="is-group"></select></label>
+          <label class="field">Units (1&ndash;10)<input id="is-units" type="number" min="1" max="10" value="1" style="width:90px"></label>
+          <button class="btn primary" id="is-go">Issue</button>
+        </div>
+        <div id="is-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Report -->
+  <section data-panel="report" hidden>
+    <h1>Donor report</h1>
+    <p class="lead">The same text report the C program writes to <code>donor_report.txt</code> with <code>fprintf</code>.</p>
+    <div class="panel">
+      <div class="toolbar">
+        <button class="btn primary" id="rep-download">Download donor_report.txt</button>
+        <button class="btn danger" id="rep-reset">Reset to sample data</button>
+      </div>
+      <pre class="report" id="rep-text"></pre>
+    </div>
+  </section>
+
+  <p class="footer-note">LifeLink prototype &middot; M.V. Vamsi Krishna (25BEV7052) &middot; data is stored only in this browser</p>
+</main>
+
+<datalist id="cities"></datalist>
+
+<dialog id="edit-dialog">
+  <form method="dialog" id="edit-form">
+    <h2 id="edit-title">Edit donor</h2>
+    <label class="field">Mobile number<input name="phone" maxlength="10" inputmode="numeric"></label>
+    <label class="field">City<input name="city" list="cities"></label>
+    <label class="field">Age (18&ndash;65)<input name="age" inputmode="numeric"></label>
+    <span class="err" id="edit-err"></span>
+    <div class="dialog-actions">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="save" id="edit-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- Rules (same as bloodbank.c) ---------- */
+const GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const MIN_GAP_DAYS = 90, LOW_STOCK = 5, KEY = "lifelink-prototype-v1";
+
+const SAMPLE_DONORS = [
+  ["Ravi Kumar", 24, "M", "O+", "9876543210", "Amaravati", [12, 5, 2026], 3],
+  ["Sneha Reddy", 21, "F", "A+", "9123456780", "Vijayawada", [1, 9, 2026], 1],
+  ["Arjun Varma", 30, "M", "B+", "9988776655", "Guntur", null, 0],
+  ["Priya Sharma", 27, "F", "O-", "8877665544", "Amaravati", [15, 6, 2026], 2],
+  ["Mohammed Imran", 35, "M", "AB+", "7766554433", "Vijayawada", [20, 3, 2026], 5],
+  ["Divya Lakshmi", 22, "F", "A-", "9012345678", "Guntur", [10, 10, 2026], 1],
+  ["Karthik Naidu", 29, "M", "B-", "8123456789", "Amaravati", [5, 1, 2026], 4],
+  ["Anjali Rao", 26, "F", "AB-", "6301234567", "Vijayawada", null, 0],
+  ["Suresh Babu", 45, "M", "O+", "9440012345", "Guntur", [30, 8, 2026], 6],
+  ["Lakshmi Prasanna", 32, "F", "A+", "9550067890", "Amaravati", [2, 2, 2026], 2]
+];
+const SAMPLE_STOCK = [12, 3, 15, 2, 7, 1, 20, 4];
+
+const now = new Date();
+const TODAY = { d: now.getDate(), m: now.getMonth() + 1, y: now.getFullYear() };
+
+/* day number so two dates can be subtracted (same formula as dateToDays in C) */
+function dateToDays({ d, m, y }) {
+  if (m < 3) { y--; m += 12; }
+  return 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) + Math.floor((153 * (m - 3) + 2) / 5) + d;
+}
+function daysUntilEligible(donor) {
+  if (!donor.last) return 0;
+  const gap = dateToDays(TODAY) - dateToDays(donor.last);
+  return gap >= MIN_GAP_DAYS ? 0 : MIN_GAP_DAYS - gap;
+}
+function canDonate(donor, patient) {
+  if (donor.includes("A") && !patient.includes("A")) return false;
+  if (donor.includes("B") && !patient.includes("B")) return false;
+  if (donor.endsWith("+") && patient.endsWith("-")) return false;
+  return true;
+}
+const fmtDate = dt => dt ? `${String(dt.d).padStart(2, "0")}/${String(dt.m).padStart(2, "0")}/${dt.y}` : "Never";
+const groupIndex = g => GROUPS.indexOf(g);
+const sameText = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/* ---------- Storage (browser only, like lifelink.dat for the C program) ---------- */
+let state;
+function sampleState() {
+  return {
+    nextId: SAMPLE_DONORS.length + 1,
+    stock: SAMPLE_STOCK.slice(),
+    donors: SAMPLE_DONORS.map(([name, age, gender, group, phone, city, last, times], i) => ({
+      id: i + 1, name, age, gender, group, phone, city,
+      last: last ? { d: last[0], m: last[1], y: last[2] } : null, times
+    }))
+  };
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) { state = JSON.parse(raw); return; }
+  } catch (e) { /* storage unavailable: fall back to sample data */ }
+  state = sampleState();
+  save();
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+}
+
+/* ---------- Helpers ---------- */
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
+}
+const statusBadge = d => {
+  const w = daysUntilEligible(d);
+  return w === 0 ? '<span class="badge ok">Eligible</span>' : `<span class="badge wait">Wait ${w}d</span>`;
+};
+function donorTable(list, withActions) {
+  if (!list.length) return '<p class="empty">No matching donor found.</p>';
+  const rows = list.map(d => `<tr>
+      <td class="num">${d.id}</td><td>${esc(d.name)}</td><td class="num">${d.age}</td><td>${d.gender}</td>
+      <td><span class="badge group">${d.group}</span></td><td class="num">${d.phone}</td><td>${esc(d.city)}</td>
+      <td class="num">${fmtDate(d.last)}</td><td class="num">${d.times}</td><td>${statusBadge(d)}</td>
+      ${withActions ? `<td class="actions">
+        <button class="btn small" data-act="donate" data-id="${d.id}" title="Record a donation today">Donate</button>
+        <button class="btn small" data-act="edit" data-id="${d.id}">Edit</button>
+        <button class="btn small danger" data-act="remove" data-id="${d.id}">Remove</button></td>` : ""}
+    </tr>`).join("");
+  return `<table><thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Sex</th><th>Group</th><th>Phone</th><th>City</th>
+    <th>Last donated</th><th>Times</th><th>Status</th>${withActions ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+function stockBars(target) {
+  const max = Math.max(20, ...state.stock);
+  target.innerHTML = GROUPS.map((g, i) => {
+    const n = state.stock[i], low = n < LOW_STOCK;
+    return `<div class="stock-row"><span class="g">${g}</span>
+      <div class="track"><div class="fill ${low ? "low" : ""}" style="width:${(n / max) * 100}%"></div></div>
+      <span class="n ${low ? "low" : ""}">${n}${low ? " LOW" : ""}</span></div>`;
+  }).join("");
+}
+function lowGroups() { return GROUPS.filter((g, i) => state.stock[i] < LOW_STOCK); }
+function fillSelect(sel, withBlank) {
+  sel.innerHTML = (withBlank ? '<option value="">Select</option>' : "") + GROUPS.map(g => `<option>${g}</option>`).join("");
+}
+
+/* ---------- Views ---------- */
+function renderDashboard() {
+  const eligible = state.donors.filter(d => daysUntilEligible(d) === 0).length;
+  const units = state.stock.reduce((a, b) => a + b, 0);
+  const low = lowGroups();
+  $("#tiles").innerHTML = [
+    ["Registered donors", state.donors.length, ""],
+    ["Eligible to donate now", eligible, ""],
+    ["Units in stock", units, ""],
+    ["Groups low on stock", low.length, low.length ? "alert" : ""]
+  ].map(([l, v, c]) => `<div class="panel tile ${c}"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+  $("#dash-alert").innerHTML = low.length
+    ? `<div class="alert-box"><strong>Low stock alert</strong>${low.map(g => `${g}: ${state.stock[groupIndex(g)]} unit(s)`).join(" &middot; ")} &mdash; organise a donation drive.</div>`
+    : "";
+  stockBars($("#dash-stock"));
+  const counts = GROUPS.map(g => state.donors.filter(d => d.group === g).length);
+  const maxC = Math.max(1, ...counts);
+  $("#dash-groups").innerHTML = GROUPS.map((g, i) => `<div class="stock-row"><span class="g">${g}</span>
+      <div class="track"><div class="fill" style="width:${(counts[i] / maxC) * 100}%;background:var(--accent)"></div></div>
+      <span class="n">${counts[i]}</span></div>`).join("");
+}
+
+function renderDonors() {
+  const mode = $("#search-mode").value, value = $("#search-value").value.trim();
+  $("#search-value-wrap").hidden = mode === "all";
+  let list = state.donors.slice();
+  if (mode !== "all" && value) {
+    if (mode === "group") list = list.filter(d => sameText(d.group, value));
+    if (mode === "city") list = list.filter(d => sameText(d.city, value));
+    if (mode === "id") list = list.filter(d => d.id === Number(value));
+  }
+  const sort = $("#sort-by").value;
+  const byName = (a, b) => a.name.localeCompare(b.name);
+  if (sort === "name") list.sort(byName);
+  if (sort === "group") list.sort((a, b) => groupIndex(a.group) - groupIndex(b.group) || byName(a, b));
+  if (sort === "city") list.sort((a, b) => a.city.localeCompare(b.city) || byName(a, b));
+  $("#donor-table").innerHTML = donorTable(list, true);
+  const eligible = list.filter(d => daysUntilEligible(d) === 0).length;
+  $("#donor-summary").textContent = list.length ? `${list.length} donor(s) shown, ${eligible} eligible to donate now.` : "";
+}
+
+function renderEmergency() {
+  const patient = $("#em-group").value, city = $("#em-city").value.trim();
+  const groups = GROUPS.filter(g => canDonate(g, patient));
+  const units = groups.reduce((s, g) => s + state.stock[groupIndex(g)], 0);
+  const pool = state.donors.filter(d => canDonate(d.group, patient) && (!city || sameText(d.city, city)));
+  const ready = pool.filter(d => daysUntilEligible(d) === 0)
+    .sort((a, b) => (b.group === patient) - (a.group === patient));     /* exact matches first */
+  const waiting = pool.filter(d => daysUntilEligible(d) > 0)
+    .sort((a, b) => daysUntilEligible(a) - daysUntilEligible(b));
+  let html = `<h2>Patient ${patient} can receive from</h2>
+    <div class="chips">${groups.map(g => `<span class="chip ${g === patient ? "exact" : ""}">${g}</span>`).join("")}</div>
+    <p>Compatible units in the blood bank right now: <strong>${units}</strong></p>`;
+  if (ready.length) {
+    html += `<p><strong>${ready.length} eligible donor(s)</strong> ${city ? "in " + esc(city) : ""} &mdash; exact matches are listed first. Call them now.</p>
+      <div class="table-wrap">${donorTable(ready, false)}</div>`;
+  } else {
+    html += `<div class="alert-box"><strong>No eligible compatible donor available right now${city ? " in " + esc(city) : ""}.</strong>
+      ${waiting.length ? `Next available: ${esc(waiting[0].name)} (${waiting[0].group}, ${esc(waiting[0].city)}) in ${daysUntilEligible(waiting[0])} day(s), phone ${waiting[0].phone}.` : "No compatible donor is registered here."}</div>`;
+  }
+  $("#em-result").innerHTML = html;
+}
+
+function renderStock() { stockBars($("#stock-bars")); }
+
+function reportText() {
+  const pad = (s, n) => String(s).slice(0, n).padEnd(n);
+  let out = "LifeLink - Blood Bank & Donor Finder\n";
+  out += `Donor report generated on ${fmtDate(TODAY)}\n\n`;
+  out += `${pad("ID", 4)} ${pad("Name", 18)} ${pad("Grp", 4)} ${pad("Phone", 10)}  ${pad("City", 11)} ${pad("Last Donated", 12)} Status\n`;
+  let eligible = 0;
+  for (const d of state.donors) {
+    const w = daysUntilEligible(d);
+    if (w === 0) eligible++;
+    out += `${pad(d.id, 4)} ${pad(d.name, 18)} ${pad(d.group, 4)} ${pad(d.phone, 10)}  ${pad(d.city, 11)} ${pad(fmtDate(d.last), 12)} ${w === 0 ? "Eligible" : `Wait ${w} days`}\n`;
+  }
+  out += "\nBlood stock (units):\n";
+  GROUPS.forEach((g, i) => { out += `  ${pad(g, 4)} ${String(state.stock[i]).padStart(3)}${state.stock[i] < LOW_STOCK ? "  LOW" : ""}\n`; });
+  out += `\nTotal donors: ${state.donors.length}   Eligible now: ${eligible}\n`;
+  return out;
+}
+function renderReport() { $("#rep-text").textContent = reportText(); }
+
+const RENDER = { dashboard: renderDashboard, donors: renderDonors, register() {}, emergency() {}, stock: renderStock, report: renderReport };
+let current = "dashboard";
+function show(view) {
+  current = view;
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === view));
+  document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== view; });
+  RENDER[view]();
+  try { sessionStorage.setItem(KEY + "-tab", view); } catch (e) { /* ignore */ }
+}
+function refreshCities() {
+  const cities = [...new Set(state.donors.map(d => d.city))].sort();
+  $("#cities").innerHTML = cities.map(c => `<option value="${esc(c)}">`).join("");
+}
+function changed() { save(); refreshCities(); RENDER[current](); }
+
+/* ---------- Actions ---------- */
+function recordDonation(id) {
+  const d = state.donors.find(x => x.id === id);
+  const w = daysUntilEligible(d);
+  if (w > 0) { toast(`${d.name} donated recently and must wait ${w} more day(s). Donation not recorded.`); return; }
+  if (!confirm(`Record one unit donated today by ${d.name} (${d.group})?`)) return;
+  d.last = { ...TODAY };
+  d.times++;
+  state.stock[groupIndex(d.group)]++;
+  changed();
+  toast(`Thank you, ${d.name}! ${d.group} stock is now ${state.stock[groupIndex(d.group)]} unit(s).`);
+}
+
+let editingId = null;
+function openEdit(id) {
+  const d = state.donors.find(x => x.id === id), f = $("#edit-form");
+  editingId = id;
+  $("#edit-title").textContent = `Edit donor ${d.id} - ${d.name}`;
+  f.phone.value = d.phone; f.city.value = d.city; f.age.value = d.age;
+  $("#edit-err").textContent = "";
+  $("#edit-dialog").showModal();
+}
+$("#edit-save").addEventListener("click", e => {
+  const f = $("#edit-form"), err = validate({ phone: f.phone.value, city: f.city.value, age: f.age.value }, ["phone", "city", "age"]);
+  const first = Object.values(err)[0];
+  if (first) { e.preventDefault(); $("#edit-err").textContent = first; return; }
+  const d = state.donors.find(x => x.id === editingId);
+  d.phone = f.phone.value.trim(); d.city = f.city.value.trim(); d.age = Number(f.age.value);
+  changed();
+  toast(`Donor ${d.id} updated.`);
+});
+
+function removeDonor(id) {
+  const d = state.donors.find(x => x.id === id);
+  if (!confirm(`Remove ${d.name} (ID ${d.id}) permanently?`)) return;
+  state.donors = state.donors.filter(x => x.id !== id);
+  changed();
+  toast("Donor removed.");
+}
+
+$("#donor-table").addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const id = Number(b.dataset.id);
+  ({ donate: recordDonation, edit: openEdit, remove: removeDonor })[b.dataset.act](id);
+});
+
+/* validation rules - same as readWords / readInt / readPhone / readDate in C */
+function validate(v, fields) {
+  const e = {};
+  const words = /^[A-Za-z .]+$/;
+  if (fields.includes("name") && !words.test(v.name.trim())) e.name = "Use letters and spaces only.";
+  if (fields.includes("age")) {
+    const a = Number(v.age);
+    if (!/^\d+$/.test(String(v.age).trim()) || a < 18 || a > 65) e.age = "Please enter a number between 18 and 65.";
+  }
+  if (fields.includes("gender") && !v.gender) e.gender = "Choose M, F or O.";
+  if (fields.includes("group") && !GROUPS.includes(v.group)) e.group = "Choose a valid blood group.";
+  if (fields.includes("phone") && !/^[6-9]\d{9}$/.test(v.phone.trim())) e.phone = "Enter a valid 10-digit mobile number (starts with 6-9).";
+  if (fields.includes("city") && !words.test(v.city.trim())) e.city = "Use letters and spaces only.";
+  if (fields.includes("last") && !v.never) {
+    if (!v.last) e.last = "Pick a date, or tick Never donated.";
+    else {
+      const [y, m, d] = v.last.split("-").map(Number);
+      if (dateToDays({ d, m, y }) > dateToDays(TODAY)) e.last = "Date cannot be in the future.";
+    }
+  }
+  return e;
+}
+
+$("#reg-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target, el = f.elements;   /* f.elements: f.name would be the form's own name */
+  const v = { name: el.name.value, age: el.age.value, gender: el.gender.value, group: el.group.value,
+              phone: el.phone.value, city: el.city.value, last: el.last.value, never: el.never.checked };
+  const err = validate(v, ["name", "age", "gender", "group", "phone", "city", "last"]);
+  f.querySelectorAll("[data-err]").forEach(s => { s.textContent = err[s.dataset.err] || ""; });
+  if (Object.keys(err).length) return;
+  let last = null;
+  if (!v.never) { const [y, m, d] = v.last.split("-").map(Number); last = { d, m, y }; }
+  const donor = { id: state.nextId++, name: v.name.trim(), age: Number(v.age), gender: v.gender, group: v.group,
+                  phone: v.phone.trim(), city: v.city.trim(), last, times: last ? 1 : 0 };
+  state.donors.push(donor);
+  changed();
+  f.reset();
+  const w = daysUntilEligible(donor);
+  toast(`Donor registered with ID ${donor.id}. ${w === 0 ? "Eligible to donate now." : `Can donate again in ${w} day(s).`}`);
+});
+$("#reg-form").addEventListener("reset", e => e.target.querySelectorAll("[data-err]").forEach(s => { s.textContent = ""; }));
+$("#reg-form").elements.never.addEventListener("change", e => { $("#reg-form").elements.last.disabled = e.target.checked; });
+
+$("#em-find").addEventListener("click", renderEmergency);
+$("#em-group").addEventListener("change", renderEmergency);
+
+function issue(patient, from, units) {
+  const i = groupIndex(from);
+  state.stock[i] -= units;
+  changed();
+  const low = lowGroups();
+  $("#is-result").innerHTML = `<p>Issued <strong>${units} unit(s) of ${from}</strong>${from !== patient ? ` for a ${patient} patient` : ""}. Remaining ${from} stock: ${state.stock[i]}.</p>
+    ${low.length ? `<div class="alert-box"><strong>Low stock alert</strong>${low.join(", ")} below ${LOW_STOCK} units.</div>` : ""}`;
+}
+$("#is-go").addEventListener("click", () => {
+  const patient = $("#is-group").value, units = Number($("#is-units").value);
+  if (!Number.isInteger(units) || units < 1 || units > 10) { toast("Please enter a number between 1 and 10."); return; }
+  const g = groupIndex(patient);
+  if (state.stock[g] >= units) { issue(patient, patient, units); return; }
+  const alts = GROUPS.filter((x, i) => x !== patient && canDonate(x, patient) && state.stock[i] >= units);
+  $("#is-result").innerHTML = `<div class="alert-box"><strong>Only ${state.stock[g]} unit(s) of ${patient} available.</strong>
+    ${alts.length ? "Compatible groups with enough stock are shown below. Incompatible groups are never offered." : "No compatible group has enough stock. Use Emergency to call eligible donors."}</div>
+    <div class="chips">${alts.map(a => `<button class="btn small" data-alt="${a}">Issue ${units} from ${a} (${state.stock[groupIndex(a)]})</button>`).join("")}</div>`;
+});
+$("#is-result").addEventListener("click", e => {
+  const b = e.target.closest("button[data-alt]");
+  if (b) issue($("#is-group").value, b.dataset.alt, Number($("#is-units").value));
+});
+
+$("#rep-download").addEventListener("click", () => {
+  const url = URL.createObjectURL(new Blob([reportText()], { type: "text/plain" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = "donor_report.txt"; a.click();
+  URL.revokeObjectURL(url);
+});
+$("#rep-reset").addEventListener("click", () => {
+  if (!confirm("Replace all data with the 10 sample donors and sample stock?")) return;
+  state = sampleState();
+  changed();
+  toast("Sample data restored.");
+});
+
+$("#search-mode").addEventListener("change", () => {
+  const ph = { group: "e.g. B+", city: "e.g. Guntur", id: "e.g. 7" }[$("#search-mode").value] || "";
+  $("#search-value").placeholder = ph;
+  $("#search-value").value = "";
+  renderDonors();
+});
+$("#search-value").addEventListener("input", renderDonors);
+$("#sort-by").addEventListener("change", renderDonors);
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
+
+/* ---------- Start ---------- */
+load();
+fillSelect($("#reg-group"), true);
+fillSelect($("#em-group"), false);
+fillSelect($("#is-group"), false);
+refreshCities();
+$("#today").innerHTML = `Today<br><strong>${fmtDate(TODAY)}</strong>`;
+let startTab = "dashboard";
+try { startTab = sessionStorage.getItem(KEY + "-tab") || "dashboard"; } catch (e) { /* ignore */ }
+show(RENDER[startTab] ? startTab : "dashboard");
+</script>
+</body>
+</html>

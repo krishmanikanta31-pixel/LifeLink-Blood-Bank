@@ -1,0 +1,11 @@
+# compiled program and runtime data
+bloodbank
+bloodbank.exe
+*.o
+lifelink.dat
+donor_report.txt
+
+# local tool settings and prototype screen captures (not used in the report)
+.claude/
+screenshots/prototype/
+.DS_Store
