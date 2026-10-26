@@ -37,7 +37,7 @@
  *
  *  Name   : M.V. VAMSI KRISHNA
  *  Reg No : 25BEV7052
- *  Course : Introduction to Programming (Slot F2+TF2)
+ *  Course : Introduction to Programming (Slot F2+TFF2)
  * ==================================================================
  */
 

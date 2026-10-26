@@ -3,7 +3,7 @@
 A C mini-project (Internal Assessment, Component 3) that finds eligible, blood-compatible donors in seconds, tracks blood stock, and warns when a group runs low.
 
 - **Student:** M.V. VAMSI KRISHNA (25BEV7052)
-- **Course:** Introduction to Programming, Slot F2+TF2 – VIT-AP UNIVERSITY
+- **Course:** Introduction to Programming, Slot F2+TFF2 – VIT-AP UNIVERSITY
 - **Faculty:** Dr A. Manimuthu
 
 ## What it does
