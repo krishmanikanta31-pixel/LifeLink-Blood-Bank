@@ -977,14 +977,15 @@ function qrImage(text) {
   return `<img src="${q.createDataURL(4, 2)}" alt="QR code for ${esc(text)}">`;
 }
 let cardId = null;
-function openCard(id) {
+function openCard(id, message) {
   const d = state.donors.find(x => x.id === id), e = eligibility(d);
   cardId = id;
   const next = e.ok ? "Today" : e.wait ? fmtDate(addDays(TODAY, e.wait)) : "Not eligible";
   const qrText = `LifeLink donor ${donorCode(d)} | ${d.name} | ${d.group} | ${d.city} | next donation: ${next}`;
   const medals = MEDALS.map(([n, t]) => `<span class="medal ${d.times >= n ? "got" : "locked"}" title="${n} donation(s)">${d.times >= n ? "&#9733;" : "&#9734;"} ${t}</span>`).join("");
   const nextMedal = MEDALS.find(([n]) => d.times < n);
-  $("#card-body").innerHTML = `<div class="dcard" id="dcard">
+  $("#card-body").innerHTML = (message ? `<div class="verdict yes" style="margin:0 0 14px;padding:12px 16px"><div class="big" style="font-size:17px">${esc(message)}</div></div>` : "")
+    + `<div class="dcard" id="dcard">
       <div class="top"><b>LifeLink Donor Card</b><span>${donorCode(d)}</span></div>
       <div><div class="name">${esc(d.name)}</div>
         <div class="meta">${esc(d.city)}, ${esc(d.district)} dist. &middot; ${esc(d.pin)}<br>Aadhaar verified &bull;&bull;${esc(d.aadhaarLast4)}<br>
@@ -1303,7 +1304,8 @@ regForm.addEventListener("submit", async e => {
   changed();
   regForm.reset();
   const el = eligibility(donor);
-  toast(`Aadhaar verified. Donor registered with ID ${donor.id}. ${el.ok ? "Eligible to donate now." : el.wait ? `Can donate again in ${el.wait} day(s).` : `Not eligible: ${el.reason}.`}`);
+  /* show the new donor's card with the QR code straight away */
+  openCard(donor.id, `Aadhaar verified. Registered as donor ${donorCode(donor)}. ${el.ok ? "Eligible to donate now." : el.wait ? `Can donate again in ${el.wait} day(s).` : `Not eligible: ${el.reason}.`}`);
 });
 regForm.addEventListener("reset", () => {
   regForm.querySelectorAll("[data-err]").forEach(s => { s.textContent = ""; });
