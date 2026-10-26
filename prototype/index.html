@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LifeLink Prototype</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root {
     --bg: #f6f4f2; --panel: #ffffff; --ink: #1f1b19; --muted: #6d655f; --line: #e6e0da;
@@ -46,6 +49,8 @@
   .grid { display: grid; gap: 16px; }
   .tiles { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 16px; }
   .two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .dash-grid { grid-template-columns: 1fr; } }
   .tile .label { color: var(--muted); font-size: 13px; }
   .tile .value { font-size: 30px; font-weight: 700; line-height: 1.2; }
   .tile.alert .value { color: var(--accent); }
@@ -88,7 +93,7 @@
   th, td { text-align: left; padding: 9px 7px; border-bottom: 1px solid var(--line); white-space: nowrap; }
   th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
   td.num { font-variant-numeric: tabular-nums; }
-  td .sub { display: block; font-size: 11px; color: var(--muted); }
+  td .sub, .sub { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .badge.group { background: var(--accent-soft); color: var(--accent); min-width: 40px; text-align: center; }
   .badge.ok { background: var(--ok-soft); color: var(--ok); }
@@ -134,6 +139,110 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .footer-note { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: center; }
+
+  /* ---------- Blood bags ---------- */
+  .bags { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 14px 10px; }
+  .bag-wrap { text-align: center; }
+  .bag-cap { width: 18px; height: 10px; margin: 0 auto; background: var(--line); border-radius: 4px 4px 0 0; }
+  .bag { position: relative; width: 66px; height: 92px; margin: 0 auto; border: 2px solid var(--line); border-radius: 14px 14px 26px 26px; overflow: hidden; background: var(--bg); }
+  .bag .blood { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, #e53935, #b71c1c); transition: height .6s ease; }
+  .bag .blood::before { content: ""; position: absolute; top: -5px; left: -10%; width: 120%; height: 10px; border-radius: 50%; background: #e53935; }
+  .bag .grp { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 17px; color: var(--ink); text-shadow: 0 0 6px var(--panel); }
+  .bag-wrap.low .bag { border-color: var(--warn); }
+  .bag-wrap.critical .bag { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .bag-units { font-size: 13px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .bag-wrap.low .bag-units, .bag-wrap.critical .bag-units { font-weight: 700; color: var(--accent); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+
+  /* ---------- Compatibility chart ---------- */
+  .compat-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .compat-pick button { min-width: 48px; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 6px 10px; font-weight: 700; cursor: pointer; }
+  .compat-pick button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  table.compat th, table.compat td { text-align: center; padding: 6px 4px; }
+  table.compat td.yes { color: var(--ok); font-weight: 700; }
+  table.compat td.no { color: var(--line); }
+  table.compat .hl { background: var(--accent-soft); }
+  table.compat td.yes.hl { background: var(--ok-soft); }
+
+  /* ---------- Trend chart, map, leaderboard ---------- */
+  .cols { display: flex; align-items: flex-end; gap: 10px; height: 170px; padding-top: 10px; }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .col .bar { width: 100%; max-width: 44px; background: var(--accent); border-radius: 6px 6px 0 0; min-height: 3px; transition: height .5s; }
+  .col .v { font-size: 12px; font-weight: 700; }
+  .col .m { font-size: 12px; color: var(--muted); }
+  #map { height: 320px; border-radius: 10px; border: 1px solid var(--line); z-index: 0; }
+  .leader { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .leader:last-child { border-bottom: 0; }
+  .leader .rank { font-weight: 800; color: var(--muted); }
+
+  /* ---------- Badges ---------- */
+  .medals { display: flex; flex-wrap: wrap; gap: 6px; }
+  .medal { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid var(--line); }
+  .medal.got { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .medal.locked { color: var(--muted); opacity: .6; }
+
+  /* ---------- Donor card ---------- */
+  .dcard { border-radius: 16px; padding: 18px; color: #fff; background: linear-gradient(135deg, #b71c1c, #e53935 60%, #ff7043); display: grid; grid-template-columns: 1fr auto; gap: 14px; box-shadow: 0 10px 30px rgba(183,28,28,.3); }
+  .dcard .top { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; font-size: 13px; opacity: .95; }
+  .dcard .top b { font-size: 16px; letter-spacing: .3px; }
+  .dcard .name { font-size: 20px; font-weight: 800; line-height: 1.2; }
+  .dcard .meta { font-size: 13px; opacity: .95; margin-top: 4px; line-height: 1.6; }
+  .dcard .grp { font-size: 40px; font-weight: 900; line-height: 1; }
+  .dcard .qr { background: #fff; border-radius: 10px; padding: 6px; align-self: end; }
+  .dcard .qr img { display: block; width: 104px; height: 104px; image-rendering: pixelated; }
+  .card-extra { margin-top: 14px; display: grid; gap: 10px; }
+  .lives { font-size: 14px; }
+  .lives b { font-size: 22px; color: var(--accent); }
+  dialog.wide { width: min(640px, calc(100vw - 32px)); }
+
+  /* ---------- Certificate ---------- */
+  .cert { background: #fffdf7; color: #2b2118; border: 10px double #b71c1c; padding: 28px 30px; text-align: center; font-family: Georgia, "Times New Roman", serif; }
+  .cert h3 { font-size: 26px; margin: 4px 0 2px; letter-spacing: 1px; color: #b71c1c; }
+  .cert .small { font-size: 13px; color: #6b5a4b; }
+  .cert .who { font-size: 28px; font-weight: 700; margin: 14px 0 4px; border-bottom: 1px solid #c9b8a6; display: inline-block; padding: 0 20px 4px; }
+  .cert p { font-size: 15px; line-height: 1.6; margin: 10px 0; }
+  .cert .sign { display: flex; justify-content: space-between; margin-top: 26px; font-size: 13px; }
+  .cert .sign span { border-top: 1px solid #6b5a4b; padding-top: 4px; min-width: 150px; }
+
+  /* ---------- Requests and camps ---------- */
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .req-card { border-left: 4px solid var(--accent); }
+  .req-card.planned { border-left-color: var(--info); }
+  .req-card.done { border-left-color: var(--ok); opacity: .85; }
+  .req-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+  .req-head .bigg { font-size: 28px; font-weight: 900; color: var(--accent); line-height: 1; }
+  .req-meta { font-size: 13px; color: var(--muted); margin: 6px 0 10px; line-height: 1.6; }
+  .timeline { display: flex; gap: 0; margin: 10px 0 12px; }
+  .timeline .step { flex: 1; text-align: center; font-size: 12px; color: var(--muted); position: relative; padding-top: 18px; }
+  .timeline .step::before { content: ""; position: absolute; top: 4px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--line); }
+  .timeline .step::after { content: ""; position: absolute; top: 9px; left: calc(50% + 8px); right: calc(-50% + 8px); height: 2px; background: var(--line); }
+  .timeline .step:last-child::after { display: none; }
+  .timeline .step.on { color: var(--ink); font-weight: 600; }
+  .timeline .step.on::before { background: var(--ok); }
+  .timeline .step.on::after { background: var(--ok); }
+  .row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .wa { background: #25d366; border-color: #25d366; color: #fff; font-weight: 600; text-decoration: none; }
+  .camp-date { display: inline-block; text-align: center; background: var(--accent-soft); color: var(--accent); border-radius: 10px; padding: 6px 10px; font-weight: 800; line-height: 1.1; margin-right: 12px; }
+  .camp-date small { display: block; font-size: 11px; font-weight: 600; }
+  .seats { height: 8px; background: var(--line); border-radius: 6px; overflow: hidden; margin: 8px 0 4px; }
+  .seats div { height: 100%; background: var(--ok); }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+
+  /* ---------- Eligibility checker ---------- */
+  .verdict { border-radius: 14px; padding: 18px 20px; margin-top: 16px; }
+  .verdict.yes { background: var(--ok-soft); color: var(--ok); }
+  .verdict.later { background: var(--warn-soft); color: var(--warn); }
+  .verdict.no { background: var(--accent-soft); color: var(--accent); }
+  .verdict .big { font-size: 22px; font-weight: 800; }
+  .verdict p { color: var(--ink); margin: 6px 0 0; }
+
+  #print-area { display: none; }
+  @media print {
+    body.printing > *:not(#print-area) { display: none !important; }
+    body.printing #print-area { display: block; }
+    .dcard, .cert { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -148,7 +257,10 @@
     <button role="tab" data-view="dashboard" aria-selected="true">Dashboard</button>
     <button role="tab" data-view="donors">Donors</button>
     <button role="tab" data-view="register">Register donor</button>
+    <button role="tab" data-view="check">Can I donate?</button>
     <button role="tab" data-view="emergency" class="emergency">Emergency</button>
+    <button role="tab" data-view="requests" class="emergency">Requests</button>
+    <button role="tab" data-view="camps">Camps</button>
     <button role="tab" data-view="stock">Blood stock</button>
     <button role="tab" data-view="report">Report</button>
   </nav>
@@ -161,9 +273,16 @@
     <p class="lead">Donors, eligibility and blood stock at a glance.</p>
     <div id="dash-alert"></div>
     <div class="grid tiles" id="tiles"></div>
-    <div class="grid two">
+    <div class="grid two dash-grid">
       <div class="panel"><h2>Blood stock (units)</h2><div id="dash-stock"></div></div>
       <div class="panel"><h2>Donors per blood group</h2><div id="dash-groups"></div></div>
+      <div class="panel"><h2>Donations per month</h2><div id="dash-trend"></div></div>
+      <div class="panel"><h2>Top donors</h2><div id="dash-leaders"></div></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Donors and blood centres on the map</h2>
+      <div id="map"></div>
+      <p class="note" id="map-note" style="margin:8px 0 0">Red circles: registered donors per city (bigger = more donors). Pins: blood centres (sample list).</p>
     </div>
   </section>
 
@@ -285,6 +404,27 @@
     </div>
   </section>
 
+  <!-- Eligibility checker -->
+  <section data-panel="check" hidden>
+    <h1>Can I donate blood?</h1>
+    <p class="lead">A quick check before you register or visit a blood bank. Nothing is saved.</p>
+    <div class="panel">
+      <form id="check-form" novalidate>
+        <div class="form-grid">
+          <label class="field"><span>Date of birth <span class="req">*</span></span><input type="date" name="dob"><span class="err" data-cerr="dob"></span></label>
+          <label class="field"><span>Gender <span class="req">*</span></span><select name="gender"><option value="">Select</option><option value="M">Male</option><option value="F">Female</option><option value="O">Other</option></select><span class="err" data-cerr="gender"></span></label>
+          <label class="field"><span>Body weight (kg) <span class="req">*</span></span><input name="weight" inputmode="numeric" maxlength="3"><span class="err" data-cerr="weight"></span></label>
+          <label class="field">Last donation date<input type="date" name="last"><span class="check"><input type="checkbox" name="never"> I have never donated</span><span class="err" data-cerr="last"></span></label>
+        </div>
+        <h2 style="margin-top:14px">Today's health questions</h2>
+        <div class="questions" id="check-questions"></div>
+        <span class="err" data-cerr="health"></span>
+        <div style="margin-top:12px;display:flex;gap:10px"><button class="btn primary" type="submit">Check now</button><button class="btn" type="reset">Clear</button></div>
+      </form>
+      <div id="check-result"></div>
+    </div>
+  </section>
+
   <!-- Emergency -->
   <section data-panel="emergency" hidden>
     <h1>Emergency donor finder</h1>
@@ -297,6 +437,48 @@
       </div>
       <div id="em-result"><p class="empty">Choose a blood group and press Find donors.</p></div>
     </div>
+  </section>
+
+  <!-- Requests -->
+  <section data-panel="requests" hidden>
+    <h1>Emergency blood requests</h1>
+    <p class="lead">Hospitals post what they need; matching donors respond. Share a request on WhatsApp to reach more people.</p>
+    <div class="grid two" style="margin-bottom:16px">
+      <div class="panel">
+        <h2>Post a request</h2>
+        <form id="req-form" novalidate>
+          <div class="form-grid">
+            <label class="field"><span>Hospital <span class="req">*</span></span><input name="hospital" autocomplete="off"><span class="err" data-rerr="hospital"></span></label>
+            <label class="field"><span>Patient blood group <span class="req">*</span></span><select name="group" id="req-group"></select><span class="err" data-rerr="group"></span></label>
+            <label class="field"><span>Units needed <span class="req">*</span></span><input name="units" type="number" min="1" max="10" value="1"><span class="err" data-rerr="units"></span></label>
+            <label class="field"><span>Urgency <span class="req">*</span></span><select name="urgency"><option>Critical</option><option>Urgent</option><option>Planned</option></select></label>
+            <label class="field"><span>City <span class="req">*</span></span><input name="city" list="cities" autocomplete="off"><span class="err" data-rerr="city"></span></label>
+            <label class="field"><span>PIN code <span class="req">*</span></span><input name="pin" inputmode="numeric" maxlength="6"><span class="err" data-rerr="pin"></span></label>
+            <label class="field"><span>Contact mobile <span class="req">*</span></span><input name="phone" inputmode="numeric" maxlength="10"><span class="err" data-rerr="phone"></span></label>
+            <label class="field"><span>Needed by <span class="req">*</span></span><input name="by" type="date"><span class="err" data-rerr="by"></span></label>
+          </div>
+          <button class="btn primary" type="submit" style="margin-top:12px">Post request</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>How it works</h2>
+        <div class="timeline"><div class="step on">Requested</div><div class="step on">Donor found</div><div class="step on">Fulfilled</div></div>
+        <ul class="note" style="padding-left:18px;margin:0">
+          <li>Only donors who are compatible <b>and</b> eligible today can respond.</li>
+          <li>The hospital marks the request fulfilled once blood is received.</li>
+          <li>Share sends a ready-made message to WhatsApp.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="toolbar"><label class="field">Show<select id="req-filter"><option value="open">Open requests</option><option value="all">All requests</option><option value="done">Fulfilled</option></select></label></div>
+    <div class="cards" id="req-list"></div>
+  </section>
+
+  <!-- Camps -->
+  <section data-panel="camps" hidden>
+    <h1>Blood donation camps</h1>
+    <p class="lead">Book a time slot at an upcoming camp. Only donors who will be eligible on the camp date can book.</p>
+    <div class="cards" id="camp-list"></div>
   </section>
 
   <!-- Stock -->
@@ -314,6 +496,15 @@
         </div>
         <div id="is-result"></div>
       </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Blood group compatibility chart</h2>
+      <div class="toolbar" style="margin-bottom:8px">
+        <label class="field">Show<select id="compat-mode"><option value="give">Who can this group give to?</option><option value="receive">Who can this group receive from?</option></select></label>
+      </div>
+      <div class="compat-pick" id="compat-pick"></div>
+      <p id="compat-text" style="margin:0 0 10px"></p>
+      <div class="table-wrap" id="compat-table"></div>
     </div>
   </section>
 
@@ -367,12 +558,30 @@
   </form>
 </dialog>
 
+<dialog id="card-dialog" class="wide">
+  <div id="card-body"></div>
+  <div class="dialog-actions" style="margin-top:14px">
+    <button class="btn" id="card-cert" type="button">Certificate</button>
+    <button class="btn" id="card-print" type="button">Print card</button>
+    <button class="btn primary" id="card-close" type="button">Close</button>
+  </div>
+</dialog>
+
+<dialog id="cert-dialog" class="wide">
+  <div id="cert-body"></div>
+  <div class="dialog-actions" style="margin-top:14px">
+    <button class="btn" id="cert-print" type="button">Print / save as PDF</button>
+    <button class="btn primary" id="cert-close" type="button">Close</button>
+  </div>
+</dialog>
+
+<div id="print-area"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ---------- Rules ---------- */
 const GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-const LOW_STOCK = 5, KEY = "lifelink-prototype-v3";
+const LOW_STOCK = 5, CRITICAL_STOCK = 3, KEY = "lifelink-prototype-v4", OLD_KEY = "lifelink-prototype-v3";
 /* NBTC Guidelines for Blood Donor Selection (2017) */
 const GAP_DAYS = { M: 90, F: 120, O: 120 };
 const MIN_AGE = 18, MAX_AGE = 65, MAX_FIRST_TIME_AGE = 60, MIN_WEIGHT = 45;
@@ -410,6 +619,49 @@ const SAMPLE_DONORS = [
   ["Ramesh Gupta", "L. Hari Gupta", [9, 1, 1964], "M", "O+", 70, "9000012345", "11 Lakshmipuram", "Guntur", "Guntur", "522007", null, 0, "5518"]
 ];
 const SAMPLE_STOCK = [12, 3, 15, 2, 7, 1, 20, 4];
+
+/* Sample blood centres for the map (placeholder names, not real blood banks) */
+const CENTRES = [
+  { name: "Guntur Blood Centre", city: "Guntur", lat: 16.3067, lng: 80.4365 },
+  { name: "Vijayawada Blood Centre", city: "Vijayawada", lat: 16.5062, lng: 80.6480 },
+  { name: "Amaravati Blood Centre", city: "Amaravati", lat: 16.5150, lng: 80.5160 },
+  { name: "Hyderabad Blood Centre", city: "Hyderabad", lat: 17.3850, lng: 78.4867 }
+];
+const CITY_POS = { Guntur: [16.3067, 80.4365], Vijayawada: [16.5062, 80.6480], Amaravati: [16.5150, 80.5160], Hyderabad: [17.3850, 78.4867],
+  Tenali: [16.2430, 80.6400], Mangalagiri: [16.4300, 80.5680], Visakhapatnam: [17.6868, 83.2185], Tirupati: [13.6288, 79.4192], Nellore: [14.4426, 79.9865] };
+
+/* Donor badges: [donations needed, title] */
+const MEDALS = [[1, "First Drop"], [3, "Life Saver"], [5, "Silver Heart"], [10, "Gold Hero"], [25, "Legend"]];
+const LIVES_PER_DONATION = 3;      /* one unit is split into red cells, plasma and platelets */
+
+function sampleRequests() {
+  return [
+    { id: 1, hospital: "City Care Hospital", group: "O-", units: 2, urgency: "Critical", city: "Guntur", pin: "522002", phone: "9876500101",
+      by: toInput(addDays(TODAY, 1)), created: toInput(TODAY), status: "Open", responders: [] },
+    { id: 2, hospital: "Sunrise Multispeciality", group: "B+", units: 1, urgency: "Urgent", city: "Vijayawada", pin: "520010", phone: "9876500102",
+      by: toInput(addDays(TODAY, 2)), created: toInput(addDays(TODAY, -1)), status: "Donor found", responders: [3], foundOn: toInput(TODAY) },
+    { id: 3, hospital: "Green Valley Hospital", group: "A+", units: 3, urgency: "Planned", city: "Amaravati", pin: "522237", phone: "9876500103",
+      by: toInput(addDays(TODAY, 6)), created: toInput(addDays(TODAY, -4)), status: "Fulfilled", responders: [10], foundOn: toInput(addDays(TODAY, -3)), doneOn: toInput(addDays(TODAY, -2)) }
+  ];
+}
+function sampleCamps() {
+  const slots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30"];
+  return [
+    { id: 1, name: "Mega Blood Donation Camp", venue: "VIT-AP University, Inavolu", city: "Amaravati", date: toInput(addDays(TODAY, 5)), slots, perSlot: 3, bookings: [{ donor: 1, slot: "09:30" }] },
+    { id: 2, name: "Youth Red Drive", venue: "Brodipet Community Hall", city: "Guntur", date: toInput(addDays(TODAY, 12)), slots, perSlot: 2, bookings: [] },
+    { id: 3, name: "Save a Life Camp", venue: "Benz Circle Function Hall", city: "Vijayawada", date: toInput(addDays(TODAY, 20)), slots, perSlot: 2, bookings: [{ donor: 5, slot: "10:00" }] },
+    { id: 4, name: "City Blood Camp", venue: "Banjara Hills Community Centre", city: "Hyderabad", date: toInput(addDays(TODAY, 27)), slots, perSlot: 3, bookings: [] }
+  ];
+}
+/* Donation history for the trend chart: each donor's past donations, spaced by their gap */
+function donationsFrom(donors) {
+  const list = [];
+  donors.forEach(d => {
+    if (!d.last) return;
+    for (let k = 0; k < d.times; k++) list.push({ donor: d.id, group: d.group, date: addDays(d.last, -k * (GAP_DAYS[d.gender] + 15)) });
+  });
+  return list;
+}
 
 /* ---------- Aadhaar check (Verhoeff checksum, as used by UIDAI) ---------- */
 const VD = [[0,1,2,3,4,5,6,7,8,9],[1,2,3,4,0,6,7,8,9,5],[2,3,4,0,1,7,8,9,5,6],[3,4,0,1,2,8,9,5,6,7],[4,0,1,2,3,9,5,6,7,8],
@@ -455,9 +707,13 @@ const ageOf = dob => ageOn(dob, TODAY);
 const fromInput = v => { const [y, m, d] = v.split("-").map(Number); return { d, m, y }; };
 const fmtDate = dt => dt ? `${String(dt.d).padStart(2, "0")}/${String(dt.m).padStart(2, "0")}/${dt.y}` : "Never";
 
-/* { ok, wait, reason } - wait > 0 means eligible again after that many days */
-function eligibility(d) {
-  const age = ageOf(d.dob);
+const addDays = (dt, n) => { const x = new Date(dt.y, dt.m - 1, dt.d + n); return { d: x.getDate(), m: x.getMonth() + 1, y: x.getFullYear() }; };
+const toInput = dt => `${dt.y}-${String(dt.m).padStart(2, "0")}-${String(dt.d).padStart(2, "0")}`;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/* { ok, wait, reason } - wait > 0 means eligible again after that many days. on = the day to check (default today) */
+function eligibility(d, on = TODAY) {
+  const age = ageOn(d.dob, on);
   if (age < MIN_AGE) return { ok: false, wait: 0, reason: `Under ${MIN_AGE}` };
   if (age > MAX_AGE) return { ok: false, wait: 0, reason: `Over ${MAX_AGE}` };
   if (d.weight < MIN_WEIGHT) return { ok: false, wait: 0, reason: `Weight below ${MIN_WEIGHT} kg` };
@@ -465,7 +721,7 @@ function eligibility(d) {
     if (age > MAX_FIRST_TIME_AGE) return { ok: false, wait: 0, reason: `First-time donor over ${MAX_FIRST_TIME_AGE}` };
     return { ok: true, wait: 0, reason: "" };
   }
-  const gap = GAP_DAYS[d.gender], since = dateToDays(TODAY) - dateToDays(d.last);
+  const gap = GAP_DAYS[d.gender], since = dateToDays(on) - dateToDays(d.last);
   return since >= gap ? { ok: true, wait: 0, reason: "" } : { ok: false, wait: gap - since, reason: `${gap}-day gap for ${GENDER_WORD[d.gender]}` };
 }
 function canDonate(donor, patient) {
@@ -481,7 +737,7 @@ const sameText = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 let state;
 const toDate = a => a ? { d: a[0], m: a[1], y: a[2] } : null;
 function sampleState() {
-  return {
+  return upgrade({
     nextId: SAMPLE_DONORS.length + 1,
     stock: SAMPLE_STOCK.slice(),
     donors: SAMPLE_DONORS.map(([name, guardian, dob, gender, group, weight, phone, address, city, district, pin, last, times, aadhaarLast4], i) => ({
@@ -489,12 +745,20 @@ function sampleState() {
       address, city, district, state: "Andhra Pradesh", pin, last: toDate(last), times,
       aadhaarLast4, aadhaarHash: `sample-${i + 1}`
     }))
-  };
+  });
+}
+/* adds the newer parts (donation history, requests, camps) to data saved by an older version */
+function upgrade(s) {
+  if (!s.donations) s.donations = donationsFrom(s.donors);
+  if (!s.requests) s.requests = sampleRequests();
+  if (!s.nextRequest) s.nextRequest = Math.max(0, ...s.requests.map(r => r.id)) + 1;
+  if (!s.camps) s.camps = sampleCamps();
+  return s;
 }
 function load() {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) { state = JSON.parse(raw); return; }
+    const raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
+    if (raw) { state = upgrade(JSON.parse(raw)); save(); return; }
   } catch (e) { /* storage unavailable: fall back to sample data */ }
   state = sampleState();
   save();
@@ -530,6 +794,7 @@ function donorTable(list, withActions) {
       <td>${esc(d.city)}<span class="sub">${esc(d.district)} dist., ${esc(d.pin)}</span></td>
       <td class="num">${fmtDate(d.last)}</td><td>${idProof(d)}</td><td>${statusBadge(d)}</td>
       ${withActions ? `<td class="actions">
+        <button class="btn small" data-act="card" data-id="${d.id}" title="Donor card, badges and certificate">Card</button>
         <button class="btn small" data-act="donate" data-id="${d.id}" title="Screen and record a donation today">Donate</button>
         <button class="btn small" data-act="edit" data-id="${d.id}">Edit</button>
         <button class="btn small danger" data-act="remove" data-id="${d.id}">Remove</button></td>` : ""}
@@ -537,14 +802,16 @@ function donorTable(list, withActions) {
   return `<table><thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Sex</th><th>Group</th><th>Phone</th><th>City</th>
     <th>Last donated</th><th>ID proof</th><th>Status</th>${withActions ? "<th></th>" : ""}</tr></thead><tbody>${rows}</tbody></table>`;
 }
+/* Blood stock drawn as blood bags that fill up with the number of units */
 function stockBars(target) {
   const max = Math.max(20, ...state.stock);
-  target.innerHTML = GROUPS.map((g, i) => {
-    const n = state.stock[i], low = n < LOW_STOCK;
-    return `<div class="stock-row"><span class="g">${g}</span>
-      <div class="track"><div class="fill ${low ? "low" : ""}" style="width:${(n / max) * 100}%"></div></div>
-      <span class="n ${low ? "low" : ""}">${n}${low ? " LOW" : ""}</span></div>`;
-  }).join("");
+  target.innerHTML = `<div class="bags">${GROUPS.map((g, i) => {
+    const n = state.stock[i], level = n < CRITICAL_STOCK ? "critical" : n < LOW_STOCK ? "low" : "";
+    return `<div class="bag-wrap ${level}" title="${g}: ${n} unit(s)"><div class="bag-cap"></div>
+      <div class="bag"><div class="blood" style="height:${Math.max(4, (n / max) * 100)}%"></div><div class="grp">${g}</div></div>
+      <div class="bag-units">${n} unit${n === 1 ? "" : "s"}${level ? ` &middot; ${level === "critical" ? "CRITICAL" : "LOW"}` : ""}</div></div>`;
+  }).join("")}</div>
+  <div class="legend"><span><i style="background:var(--accent)"></i>Critical: under ${CRITICAL_STOCK}</span><span><i style="background:var(--warn)"></i>Low: under ${LOW_STOCK}</span><span><i style="background:var(--line)"></i>Full bag = ${max} units</span></div>`;
 }
 function lowGroups() { return GROUPS.filter((g, i) => state.stock[i] < LOW_STOCK); }
 function fillSelect(sel, list, withBlank) {
@@ -592,6 +859,49 @@ function renderDashboard() {
   $("#dash-groups").innerHTML = GROUPS.map((g, i) => `<div class="stock-row"><span class="g">${g}</span>
       <div class="track"><div class="fill" style="width:${(counts[i] / maxC) * 100}%;background:var(--accent)"></div></div>
       <span class="n">${counts[i]}</span></div>`).join("");
+  renderTrend();
+  renderLeaders();
+  renderMap();
+}
+
+/* Donations in each of the last 6 months */
+function renderTrend() {
+  const months = [];
+  for (let k = 5; k >= 0; k--) {
+    const x = new Date(TODAY.y, TODAY.m - 1 - k, 1);
+    months.push({ m: x.getMonth() + 1, y: x.getFullYear() });
+  }
+  const counts = months.map(mo => state.donations.filter(dn => dn.date.m === mo.m && dn.date.y === mo.y).length);
+  const max = Math.max(1, ...counts);
+  $("#dash-trend").innerHTML = `<div class="cols">${months.map((mo, i) => `<div class="col"><span class="v">${counts[i]}</span>
+      <div class="bar" style="height:${(counts[i] / max) * 120}px"></div><span class="m">${MONTHS[mo.m - 1]}</span></div>`).join("")}</div>
+    <p class="note" style="margin:8px 0 0">${counts.reduce((a, b) => a + b, 0)} donation(s) in the last 6 months &middot; this month: ${counts[5]}</p>`;
+}
+function medalsOf(d) { return MEDALS.filter(([n]) => d.times >= n).map(([, t]) => t); }
+function renderLeaders() {
+  const top = state.donors.filter(d => d.times > 0).sort((a, b) => b.times - a.times || a.name.localeCompare(b.name)).slice(0, 5);
+  $("#dash-leaders").innerHTML = top.length ? top.map((d, i) => `<div class="leader"><span class="rank">#${i + 1}</span>
+      <span>${esc(d.name)} <span class="badge group">${d.group}</span><span class="sub note">${medalsOf(d).slice(-1)[0] || ""} &middot; up to ${d.times * LIVES_PER_DONATION} lives saved</span></span>
+      <strong>${d.times}&times;</strong></div>`).join("") : '<p class="empty">No donations yet.</p>';
+}
+let map, mapLayer;
+function renderMap() {
+  if (!window.L) { $("#map").innerHTML = '<p class="empty" style="padding:16px">The map needs an internet connection.</p>'; return; }
+  if (!map) {
+    map = L.map("map", { scrollWheelZoom: false }).setView([16.6, 80.2], 7);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+  }
+  if (mapLayer) mapLayer.remove();
+  mapLayer = L.layerGroup().addTo(map);
+  const byCity = {};
+  state.donors.forEach(d => { const key = Object.keys(CITY_POS).find(c => sameText(c, d.city)); if (key) (byCity[key] = byCity[key] || []).push(d); });
+  Object.entries(byCity).forEach(([city, list]) => {
+    const eligible = list.filter(d => eligibility(d).ok).length;
+    L.circleMarker(CITY_POS[city], { radius: 8 + list.length * 3, color: "#c62828", fillColor: "#e53935", fillOpacity: .45, weight: 2 })
+      .bindPopup(`<b>${esc(city)}</b><br>${list.length} donor(s), ${eligible} eligible now<br>${[...new Set(list.map(d => d.group))].join(", ")}`).addTo(mapLayer);
+  });
+  CENTRES.forEach(c => L.marker([c.lat, c.lng]).bindPopup(`<b>${esc(c.name)}</b><br>${esc(c.city)} &middot; sample blood centre`).addTo(mapLayer));
+  setTimeout(() => map.invalidateSize(), 50);
 }
 
 function renderDonors() {
@@ -659,7 +969,228 @@ function reportText() {
 }
 function renderReport() { $("#rep-text").textContent = reportText(); }
 
-const RENDER = { dashboard: renderDashboard, donors: renderDonors, register() {}, emergency() {}, stock: renderStock, report: renderReport };
+/* ---------- Donor card (QR code), badges and certificate ---------- */
+const donorCode = d => "LL-" + String(d.id).padStart(4, "0");
+function qrImage(text) {
+  if (!window.qrcode) return '<p class="hint" style="color:#333;width:104px">QR needs internet</p>';
+  const q = qrcode(0, "M"); q.addData(text); q.make();
+  return `<img src="${q.createDataURL(4, 2)}" alt="QR code for ${esc(text)}">`;
+}
+let cardId = null;
+function openCard(id) {
+  const d = state.donors.find(x => x.id === id), e = eligibility(d);
+  cardId = id;
+  const next = e.ok ? "Today" : e.wait ? fmtDate(addDays(TODAY, e.wait)) : "Not eligible";
+  const qrText = `LifeLink donor ${donorCode(d)} | ${d.name} | ${d.group} | ${d.city} | next donation: ${next}`;
+  const medals = MEDALS.map(([n, t]) => `<span class="medal ${d.times >= n ? "got" : "locked"}" title="${n} donation(s)">${d.times >= n ? "&#9733;" : "&#9734;"} ${t}</span>`).join("");
+  const nextMedal = MEDALS.find(([n]) => d.times < n);
+  $("#card-body").innerHTML = `<div class="dcard" id="dcard">
+      <div class="top"><b>LifeLink Donor Card</b><span>${donorCode(d)}</span></div>
+      <div><div class="name">${esc(d.name)}</div>
+        <div class="meta">${esc(d.city)}, ${esc(d.district)} dist. &middot; ${esc(d.pin)}<br>Aadhaar verified &bull;&bull;${esc(d.aadhaarLast4)}<br>
+        Donations: <b>${d.times}</b> &middot; Next donation: <b>${next}</b></div>
+        <div class="grp" style="margin-top:10px">${d.group}</div></div>
+      <div class="qr">${qrImage(qrText)}</div>
+    </div>
+    <div class="card-extra">
+      <div class="lives">Up to <b>${d.times * LIVES_PER_DONATION}</b> lives saved <span class="note">(each donation can help up to ${LIVES_PER_DONATION} patients)</span></div>
+      <div class="medals">${medals}</div>
+      <p class="note" style="margin:0">${nextMedal ? `${nextMedal[0] - d.times} more donation(s) to unlock <b>${nextMedal[1]}</b>.` : "All badges unlocked - thank you!"}</p>
+    </div>`;
+  $("#card-cert").hidden = d.times === 0;
+  $("#card-dialog").showModal();
+}
+function printHtml(html) {
+  $("#print-area").innerHTML = html;
+  document.body.classList.add("printing");
+  window.print();
+  setTimeout(() => { document.body.classList.remove("printing"); $("#print-area").innerHTML = ""; }, 500);
+}
+function openCertificate(id) {
+  const d = state.donors.find(x => x.id === id);
+  const on = d.last ? fmtDate(d.last) : fmtDate(TODAY);
+  $("#cert-body").innerHTML = `<div class="cert" id="cert">
+      <div class="small">LifeLink &middot; Blood Bank &amp; Donor Finder</div>
+      <h3>CERTIFICATE OF APPRECIATION</h3>
+      <div class="small">for voluntary blood donation</div>
+      <div class="who">${esc(d.name)}</div>
+      <p>${{ M: "S/o", F: "D/o", O: "C/o" }[d.gender]} ${esc(d.guardian)}, donor <b>${donorCode(d)}</b>, blood group <b>${d.group}</b>, donated blood voluntarily on <b>${on}</b>.
+      With <b>${d.times}</b> donation(s), you have helped save up to <b>${d.times * LIVES_PER_DONATION}</b> lives.</p>
+      <p>Thank you for being a real-life hero.</p>
+      <div class="sign"><span>Date: ${fmtDate(TODAY)}</span><span>Medical Officer, LifeLink</span></div>
+    </div>`;
+  $("#cert-dialog").showModal();
+}
+$("#card-close").addEventListener("click", () => $("#card-dialog").close());
+$("#card-print").addEventListener("click", () => printHtml($("#dcard").outerHTML));
+$("#card-cert").addEventListener("click", () => { $("#card-dialog").close(); openCertificate(cardId); });
+$("#cert-close").addEventListener("click", () => $("#cert-dialog").close());
+$("#cert-print").addEventListener("click", () => printHtml($("#cert").outerHTML));
+
+/* ---------- Can I donate? (quick check, nothing saved) ---------- */
+const checkForm = $("#check-form"), checkEl = checkForm.elements;
+checkEl.never.addEventListener("change", e => { checkEl.last.disabled = e.target.checked; });
+checkForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const v = { dob: checkEl.dob.value, gender: checkEl.gender.value, weight: checkEl.weight.value, last: checkEl.last.value, never: checkEl.never.checked };
+  const err = {};
+  if (!v.dob) err.dob = "Enter your date of birth.";
+  else if (dateToDays(fromInput(v.dob)) > dateToDays(TODAY)) err.dob = "Date of birth cannot be in the future.";
+  if (!v.gender) err.gender = "Choose a gender.";
+  if (!/^\d{2,3}$/.test(v.weight.trim()) || Number(v.weight) > 250) err.weight = "Enter your weight in kg.";
+  if (!v.never && !v.last) err.last = "Pick a date, or tick \"I have never donated\".";
+  else if (!v.never && dateToDays(fromInput(v.last)) > dateToDays(TODAY)) err.last = "Date cannot be in the future.";
+  const health = markAnswers($("#check-questions"), "chk");
+  if (health.unanswered) err.health = "Please answer every question.";
+  checkForm.querySelectorAll("[data-cerr]").forEach(s => { s.textContent = err[s.dataset.cerr] || ""; });
+  if (Object.keys(err).length) { $("#check-result").innerHTML = ""; return; }
+  const person = { dob: fromInput(v.dob), gender: v.gender, weight: Number(v.weight), last: v.never ? null : fromInput(v.last) };
+  const el = eligibility(person);
+  let html;
+  if (!el.ok && !el.wait) html = `<div class="verdict no"><div class="big">Sorry, you cannot donate</div><p>Reason: ${esc(el.reason)} (NBTC 2017 rules).</p></div>`;
+  else if (el.wait) html = `<div class="verdict later"><div class="big">You can donate from ${fmtDate(addDays(TODAY, el.wait))}</div><p>That is ${el.wait} day(s) from today &mdash; ${esc(el.reason)}.</p></div>`;
+  else if (health.deferrals.length) html = `<div class="verdict later"><div class="big">Not today &mdash; please wait</div><p>Deferred for: ${esc(health.deferrals.join(", "))}. Check again once this no longer applies.</p></div>`;
+  else html = `<div class="verdict yes"><div class="big">Yes! You can donate today</div><p>Visit a blood centre or <a href="#" data-goto="camps">book a camp slot</a>. Not registered yet? <a href="#" data-goto="register">Register as a donor</a>. Haemoglobin (12.5 g/dL or more) is tested at the blood centre.</p></div>`;
+  $("#check-result").innerHTML = html;
+});
+checkForm.addEventListener("reset", () => {
+  checkForm.querySelectorAll("[data-cerr]").forEach(s => { s.textContent = ""; });
+  $("#check-result").innerHTML = "";
+  setTimeout(() => { checkEl.last.disabled = false; $("#check-questions").querySelectorAll(".q").forEach(r => r.classList.remove("fail")); });
+});
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-goto]");
+  if (a) { e.preventDefault(); show(a.dataset.goto); window.scrollTo(0, 0); }
+});
+
+/* ---------- Emergency request board ---------- */
+const STEPS = ["Requested", "Donor found", "Fulfilled"];
+function shareLink(r) {
+  const text = `URGENT: ${r.units} unit(s) of ${r.group} blood needed at ${r.hospital}, ${r.city} (${r.pin}) by ${fmtDate(fromInput(r.by))}. `
+    + `Compatible groups: ${GROUPS.filter(g => canDonate(g, r.group)).join(", ")}. Call ${r.phone}. Shared via LifeLink.`;
+  return "https://wa.me/?text=" + encodeURIComponent(text);
+}
+function renderRequests() {
+  const filter = $("#req-filter").value;
+  const list = state.requests.filter(r => filter === "all" || (filter === "done" ? r.status === "Fulfilled" : r.status !== "Fulfilled"))
+    .sort((a, b) => ["Critical", "Urgent", "Planned"].indexOf(a.urgency) - ["Critical", "Urgent", "Planned"].indexOf(b.urgency) || a.by.localeCompare(b.by));
+  if (!list.length) { $("#req-list").innerHTML = '<p class="empty">No requests in this view.</p>'; return; }
+  $("#req-list").innerHTML = list.map(r => {
+    const step = STEPS.indexOf(r.status);
+    const responders = r.responders.map(id => state.donors.find(d => d.id === id)).filter(Boolean);
+    const candidates = state.donors.filter(d => canDonate(d.group, r.group) && eligibility(d).ok && !r.responders.includes(d.id))
+      .sort((a, b) => (b.group === r.group) - (a.group === r.group) || (sameText(b.city, r.city) - sameText(a.city, r.city)));
+    const cls = r.status === "Fulfilled" ? "done" : r.urgency === "Planned" ? "planned" : "";
+    return `<div class="panel req-card ${cls}">
+      <div class="req-head"><div><div class="bigg">${r.group}</div><span class="badge ${r.urgency === "Planned" ? "wait" : "bad"}">${r.urgency}</span></div>
+        <div style="text-align:right"><strong>${r.units} unit(s)</strong><span class="sub note">Request #${r.id}</span></div></div>
+      <div class="req-meta"><b style="color:var(--ink)">${esc(r.hospital)}</b><br>${esc(r.city)} &middot; PIN ${esc(r.pin)} &middot; call ${esc(r.phone)}<br>
+        Needed by ${fmtDate(fromInput(r.by))} &middot; compatible: ${GROUPS.filter(g => canDonate(g, r.group)).join(", ")}</div>
+      <div class="timeline">${STEPS.map((s, i) => `<div class="step ${i <= step ? "on" : ""}">${s}</div>`).join("")}</div>
+      ${responders.length ? `<p class="note" style="margin:0 0 10px">Responding: ${responders.map(d => `${esc(d.name)} (${d.group}, ${d.phone})`).join("; ")}</p>` : ""}
+      ${r.status === "Fulfilled" ? `<p class="note" style="margin:0">Fulfilled on ${fmtDate(fromInput(r.doneOn))}. Thank you!</p>` : `<div class="row-actions">
+        ${candidates.length ? `<select data-pick="${r.id}">${candidates.map(d => `<option value="${d.id}">${d.id}. ${esc(d.name)} (${d.group}, ${esc(d.city)})</option>`).join("")}</select>
+          <button class="btn small primary" data-respond="${r.id}">I can donate</button>` : '<span class="note">No eligible compatible donor yet.</span>'}
+        ${responders.length ? `<button class="btn small" data-fulfil="${r.id}">Mark fulfilled</button>` : ""}
+        <a class="btn small wa" href="${shareLink(r)}" target="_blank" rel="noopener">Share on WhatsApp</a></div>`}
+    </div>`;
+  }).join("");
+}
+$("#req-filter").addEventListener("change", renderRequests);
+$("#req-list").addEventListener("click", e => {
+  const resp = e.target.closest("[data-respond]"), ful = e.target.closest("[data-fulfil]");
+  if (resp) {
+    const r = state.requests.find(x => x.id === Number(resp.dataset.respond));
+    const donorId = Number($(`[data-pick="${r.id}"]`).value), d = state.donors.find(x => x.id === donorId);
+    r.responders.push(donorId);
+    if (r.status === "Open") { r.status = "Donor found"; r.foundOn = toInput(TODAY); }
+    changed();
+    toast(`${d.name} (${d.group}) is responding to request #${r.id}. ${r.hospital} can call ${d.phone}.`);
+  }
+  if (ful) {
+    const r = state.requests.find(x => x.id === Number(ful.dataset.fulfil));
+    r.status = "Fulfilled"; r.doneOn = toInput(TODAY);
+    changed();
+    toast(`Request #${r.id} marked fulfilled.`);
+  }
+});
+const reqForm = $("#req-form"), reqEl = reqForm.elements;
+reqForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const v = Object.fromEntries(["hospital", "group", "units", "urgency", "city", "pin", "phone", "by"].map(n => [n, reqEl[n].value.trim()]));
+  const err = {};
+  if (v.hospital.length < 3) err.hospital = "Enter the hospital name.";
+  if (!GROUPS.includes(v.group)) err.group = "Choose a blood group.";
+  if (!/^\d+$/.test(v.units) || +v.units < 1 || +v.units > 10) err.units = "Enter 1 to 10 units.";
+  if (!/^[A-Za-z .]{2,}$/.test(v.city)) err.city = "Enter the city.";
+  if (!/^[1-9]\d{5}$/.test(v.pin)) err.pin = "PIN code must be 6 digits and cannot start with 0.";
+  if (!/^[6-9]\d{9}$/.test(v.phone)) err.phone = "Enter a valid 10-digit mobile number.";
+  if (!v.by) err.by = "Choose a date.";
+  else if (dateToDays(fromInput(v.by)) < dateToDays(TODAY)) err.by = "Date cannot be in the past.";
+  reqForm.querySelectorAll("[data-rerr]").forEach(s => { s.textContent = err[s.dataset.rerr] || ""; });
+  if (Object.keys(err).length) return;
+  const r = { id: state.nextRequest++, ...v, units: Number(v.units), created: toInput(TODAY), status: "Open", responders: [] };
+  state.requests.push(r);
+  reqForm.reset(); reqEl.by.value = toInput(TODAY);
+  $("#req-filter").value = "open";
+  changed();
+  const matches = state.donors.filter(d => canDonate(d.group, r.group) && eligibility(d).ok).length;
+  toast(`Request #${r.id} posted. ${matches} eligible compatible donor(s) can respond.`);
+});
+
+/* ---------- Donation camps with slot booking ---------- */
+function renderCamps() {
+  const camps = state.camps.slice().sort((a, b) => a.date.localeCompare(b.date));
+  $("#camp-list").innerHTML = camps.map(c => {
+    const day = fromInput(c.date), total = c.slots.length * c.perSlot, booked = c.bookings.length;
+    const free = c.slots.filter(s => c.bookings.filter(b => b.slot === s).length < c.perSlot);
+    const canBook = state.donors.filter(d => eligibility(d, day).ok && !c.bookings.some(b => b.donor === d.id));
+    const who = c.bookings.map(b => { const d = state.donors.find(x => x.id === b.donor); return d ? `${b.slot} ${esc(d.name)} (${d.group})` : ""; }).filter(Boolean);
+    return `<div class="panel">
+      <div style="display:flex;align-items:center"><span class="camp-date">${day.d}<small>${MONTHS[day.m - 1]} ${day.y}</small></span>
+        <div><strong>${esc(c.name)}</strong><span class="sub note">${esc(c.venue)}, ${esc(c.city)}</span></div></div>
+      <div class="seats"><div style="width:${(booked / total) * 100}%"></div></div>
+      <p class="note" style="margin:0 0 10px">${booked} of ${total} seats booked &middot; ${c.slots[0]} to ${c.slots[c.slots.length - 1]} &middot; in ${dateToDays(day) - dateToDays(TODAY)} day(s)</p>
+      ${who.length ? `<p class="note" style="margin:0 0 10px">Booked: ${who.join("; ")}</p>` : ""}
+      ${free.length && canBook.length ? `<div class="row-actions">
+        <select data-cdonor="${c.id}">${canBook.map(d => `<option value="${d.id}">${d.id}. ${esc(d.name)} (${d.group})</option>`).join("")}</select>
+        <select data-cslot="${c.id}">${free.map(s => `<option>${s}</option>`).join("")}</select>
+        <button class="btn small primary" data-book="${c.id}">Book slot</button></div>`
+        : `<p class="note" style="margin:0">${free.length ? "No other donor will be eligible on this date." : "This camp is full."}</p>`}
+    </div>`;
+  }).join("");
+}
+$("#camp-list").addEventListener("click", e => {
+  const b = e.target.closest("[data-book]");
+  if (!b) return;
+  const c = state.camps.find(x => x.id === Number(b.dataset.book));
+  const donorId = Number($(`[data-cdonor="${c.id}"]`).value), slot = $(`[data-cslot="${c.id}"]`).value;
+  const d = state.donors.find(x => x.id === donorId);
+  c.bookings.push({ donor: donorId, slot });
+  changed();
+  toast(`${d.name} booked for ${c.name} on ${fmtDate(fromInput(c.date))} at ${slot}. Please eat a light meal and sleep well the night before.`);
+});
+
+/* ---------- Compatibility chart ---------- */
+let compatGroup = "O-";
+function renderCompat() {
+  const mode = $("#compat-mode").value;
+  $("#compat-pick").innerHTML = GROUPS.map(g => `<button data-cg="${g}" class="${g === compatGroup ? "on" : ""}">${g}</button>`).join("");
+  const list = mode === "give" ? GROUPS.filter(p => canDonate(compatGroup, p)) : GROUPS.filter(dn => canDonate(dn, compatGroup));
+  $("#compat-text").innerHTML = mode === "give"
+    ? `<b>${compatGroup}</b> can give red cells to: ${list.map(g => `<span class="badge group">${g}</span>`).join(" ")}${compatGroup === "O-" ? " &mdash; the universal donor." : ""}`
+    : `<b>${compatGroup}</b> can receive red cells from: ${list.map(g => `<span class="badge group">${g}</span>`).join(" ")}${compatGroup === "AB+" ? " &mdash; the universal recipient." : ""}`;
+  $("#compat-table").innerHTML = `<table class="compat"><thead><tr><th>Donor &darr; / Patient &rarr;</th>${GROUPS.map(p => `<th class="${mode === "receive" && p === compatGroup ? "hl" : ""}">${p}</th>`).join("")}</tr></thead><tbody>
+    ${GROUPS.map(dn => `<tr><th class="${mode === "give" && dn === compatGroup ? "hl" : ""}">${dn}</th>${GROUPS.map(p => {
+      const ok = canDonate(dn, p), hl = (mode === "give" && dn === compatGroup) || (mode === "receive" && p === compatGroup);
+      return `<td class="${ok ? "yes" : "no"} ${hl ? "hl" : ""}">${ok ? "&#10003;" : "&middot;"}</td>`;
+    }).join("")}</tr>`).join("")}</tbody></table>`;
+}
+$("#compat-mode").addEventListener("change", renderCompat);
+$("#compat-pick").addEventListener("click", e => { const b = e.target.closest("[data-cg]"); if (b) { compatGroup = b.dataset.cg; renderCompat(); } });
+
+const RENDER = { dashboard: renderDashboard, donors: renderDonors, register() {}, check() {}, emergency() {}, requests: renderRequests, camps: renderCamps,
+                 stock() { renderStock(); renderCompat(); }, report: renderReport };
 let current = "dashboard";
 function show(view) {
   current = view;
@@ -811,8 +1342,10 @@ $("#screen-ok").addEventListener("click", ev => {
   d.last = { ...TODAY };
   d.times++;
   state.stock[groupIndex(d.group)]++;
+  state.donations.push({ donor: d.id, group: d.group, date: { ...TODAY } });
   changed();
-  toast(`Thank you, ${d.name}! ${d.group} stock is now ${state.stock[groupIndex(d.group)]} unit(s). Next donation allowed after ${GAP_DAYS[d.gender]} days.`);
+  const medal = MEDALS.find(([n]) => n === d.times);
+  toast(`Thank you, ${d.name}! ${d.group} stock is now ${state.stock[groupIndex(d.group)]} unit(s).${medal ? ` New badge: ${medal[1]}!` : ""} Certificate ready in the donor card.`);
 });
 
 let editingId = null;
@@ -840,6 +1373,7 @@ function removeDonor(id) {
   const d = state.donors.find(x => x.id === id);
   if (!confirm(`Remove ${d.name} (ID ${d.id}) permanently?`)) return;
   state.donors = state.donors.filter(x => x.id !== id);
+  state.camps.forEach(c => { c.bookings = c.bookings.filter(b => b.donor !== id); });
   changed();
   toast("Donor removed.");
 }
@@ -848,7 +1382,7 @@ $("#donor-table").addEventListener("click", e => {
   const b = e.target.closest("button[data-act]");
   if (!b) return;
   const id = Number(b.dataset.id);
-  ({ donate: recordDonation, edit: openEdit, remove: removeDonor })[b.dataset.act](id);
+  ({ card: openCard, donate: recordDonation, edit: openEdit, remove: removeDonor })[b.dataset.act](id);
 });
 
 /* ---------- Emergency, stock, report ---------- */
@@ -910,6 +1444,10 @@ fillSelect($("#reg-state"), STATES, true);
 fillSelect($("#edit-state"), STATES, false);
 renderQuestions($("#reg-questions"), "reg", true);
 renderQuestions($("#screen-questions"), "scr", false);
+renderQuestions($("#check-questions"), "chk", false);
+fillSelect($("#req-group"), GROUPS, true);
+reqEl.by.value = reqEl.by.min = toInput(TODAY);
+checkEl.dob.max = checkEl.last.max = toInput(TODAY);
 refreshCities();
 regEl.dob.max = regEl.last.max = `${TODAY.y}-${String(TODAY.m).padStart(2, "0")}-${String(TODAY.d).padStart(2, "0")}`;
 $("#today").innerHTML = `Today<br><strong>${fmtDate(TODAY)}</strong>`;
