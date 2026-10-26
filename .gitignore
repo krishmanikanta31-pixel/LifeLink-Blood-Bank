@@ -13,3 +13,4 @@ screenshots/prototype/
 # local helper scripts and generated PDFs
 .tools/
 *.pdf
+!LifeLink_Report_25BEV7052.pdf

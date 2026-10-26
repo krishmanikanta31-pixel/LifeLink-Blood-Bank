@@ -71,5 +71,6 @@ Control structures, arrays (including 2-D arrays for the Aadhaar checksum), func
 | Path | Contents |
 | --- | --- |
 | `bloodbank.c` | Complete C source code |
+| `LifeLink_Report_25BEV7052.pdf` | Report: source code and output screenshots |
 | `prototype/` | Web prototype (`index.html`) |
 | `screenshots/` | Output screenshots of the C program |
