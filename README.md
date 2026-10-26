@@ -43,12 +43,28 @@ Works with any C99 compiler (GCC, Clang, MinGW, Code::Blocks). On Windows run `b
 
 `prototype/index.html` is a clickable web version of LifeLink with the same registration fields, rules and sample data. It runs in any browser with no install.
 
+It also adds features that go beyond the C program:
+
+| Feature | What it does |
+| --- | --- |
+| Donor card | Printable donor ID card with blood group, next donation date and a QR code |
+| Badges and lives saved | First Drop, Life Saver, Silver Heart, Gold Hero and Legend badges; each donation counts as up to 3 lives saved |
+| Certificate | Printable Certificate of Appreciation for donors who have donated |
+| Can I donate? | Quick eligibility check (age, weight, last donation, health questions) with the date you can donate next |
+| Emergency requests | Hospitals post blood requests; compatible, eligible donors respond; Requested → Donor found → Fulfilled timeline; share on WhatsApp |
+| Donation camps | Upcoming camps with seat booking; only donors eligible on the camp date can book |
+| Blood bag stock | Each blood group shown as a blood bag, marked low (under 5 units) or critical (under 3) |
+| Compatibility chart | Pick a blood group to see who it can give to or receive from |
+| Dashboard charts and map | Donations per month, top donors, and a map of donors and blood centres by city |
+
+Hospitals, camps and blood centres in the prototype are sample data. Everything is stored only in the browser.
+
 - Live: https://lifelinkbloodbank.vercel.app
 - Also on GitHub Pages: https://krishmanikanta31-pixel.github.io/LifeLink-Blood-Bank/prototype/
 
 ## Syllabus coverage (Modules 1–4)
 
-Control structures, arrays (including 2-D arrays for the Aadhaar checksum), functions, call by value / reference, recursion (binary search), pointers and pointer arithmetic, `malloc` / `calloc` / `realloc` / `free`, function pointers (`qsort`), structures, an array of structures, a union, and file operations `fopen` / `fread` / `fwrite` / `fseek` / `fprintf`.
+Control structures, arrays (including 2-D arrays for the Aadhaar checksum), functions, call by value / reference, recursion (binary search), pointers and pointer arithmetic, `malloc` / `calloc` / `realloc` / `free`, function pointers (our own sort with a compare function), structures, an array of structures, a union, and file operations `fopen` / `fread` / `fwrite` / `fseek` / `fprintf`.
 
 ## Folder contents
 
